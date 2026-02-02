@@ -9,19 +9,19 @@ function Login() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  // ✅ Check token khi component mount
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const roles = JSON.parse(localStorage.getItem("roles") || "[]");
+  // // ✅ Check token khi component mount
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token");
+  //   const roles = JSON.parse(localStorage.getItem("roles") || "[]");
 
-    if (token && roles.length > 0) {
-      if (roles.includes("ADMIN")) {
-        navigate("/admin");
-      } else {
-        navigate("/user");
-      }
-    }
-  }, [navigate]);
+  //   if (token && roles.length > 0) {
+  //     if (roles.includes("ADMIN")) {
+  //       navigate("/admin");
+  //     } else {
+  //       navigate("/user");
+  //     }
+  //   }
+  // }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

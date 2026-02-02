@@ -42,7 +42,7 @@ axiosClient.interceptors.response.use(
         return axiosClient(originalRequest);
       } catch (err) {
         localStorage.clear();
-        window.location.href = "/";
+        window.location.href = "/login";
       }
     }
 
