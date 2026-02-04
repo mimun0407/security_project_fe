@@ -6,10 +6,15 @@ import Header from "./Header";
 import Footer from "./Footer";
 
 function UserMenu() {
-  const { username: paramUsername } = useParams();
+  // 1. Đổi cách lấy tham số: Ưu tiên lấy email
+  const { email: paramEmail } = useParams(); 
   const navigate = useNavigate();
-  const storedUsername = localStorage.getItem("username");
-  const username = paramUsername || storedUsername;
+  
+  // Lấy email từ localStorage
+  const storedEmail = localStorage.getItem("email"); 
+  
+  // Biến định danh chính bây giờ là email
+  const userEmail = paramEmail || storedEmail;
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,17 +32,32 @@ function UserMenu() {
     imagePreview: null,
   });
 
+  // ✅ HÀM HELPER XỬ LÝ URL ẢNH
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+    
+    // Nếu là URL đầy đủ (http/https) từ Google thì dùng luôn
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+    
+    // Nếu là đường dẫn local thì ghép với localhost
+    return `http://localhost:8080${imageUrl}`;
+  };
+
+  // --- FETCH USER INFO ---
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token || !username) {
-      console.error("Thiếu token hoặc username, chuyển về login");
+    
+    if (!token || !userEmail) {
+      console.error("Thiếu token hoặc email, chuyển về login");
       navigate("/login");
       return;
     }
 
     const fetchUser = async () => {
       try {
-        const res = await axios.get(`http://localhost:8080/api/v1/user/${username}`, {
+        const res = await axios.get(`http://localhost:8080/api/v1/user/${userEmail}`, {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
@@ -50,7 +70,7 @@ function UserMenu() {
           name: data.name || "",
           email: data.email || "",
           isActive: data.isActive ?? true,
-          imagePreview: data.imageUrl ? `http://localhost:8080${data.imageUrl}` : null,
+          imagePreview: getImageUrl(data.imageUrl), // ✅ Sử dụng hàm helper
         }));
       } catch (err) {
         console.error("Lỗi khi lấy thông tin user:", err);
@@ -60,9 +80,9 @@ function UserMenu() {
     };
 
     fetchUser();
-  }, [paramUsername, navigate, username]);
+  }, [paramEmail, navigate, userEmail]);
 
-  // Fetch posts
+  // --- FETCH POSTS ---
   useEffect(() => {
     const fetchPosts = async () => {
       const token = localStorage.getItem("token");
@@ -85,7 +105,7 @@ function UserMenu() {
     fetchPosts();
   }, []);
 
-  // cleanup preview URL nếu là object URL
+  // cleanup preview URL
   useEffect(() => {
     return () => {
       if (form.imagePreview && form.imagePreview.startsWith("blob:")) {
@@ -118,7 +138,7 @@ function UserMenu() {
         password: "",
         isActive: user.isActive ?? true,
         imageFile: null,
-        imagePreview: user.imageUrl ? `http://localhost:8080${user.imageUrl}` : null,
+        imagePreview: getImageUrl(user.imageUrl), // ✅ Sử dụng hàm helper
       });
     }
     setEditMode(false);
@@ -132,10 +152,9 @@ function UserMenu() {
         return;
       }
 
-      // JSON phải khớp với UserUpdateRequest
       const payload = {
         name: form.name,
-        username: user.username, // bắt buộc vì request có field này
+        username: user.username, 
         email: form.email,
         isActive: form.isActive,
         ...(form.password ? { password: form.password } : {}),
@@ -150,7 +169,7 @@ function UserMenu() {
         fd.append("image", form.imageFile);
       }
 
-      await axios.put(`http://localhost:8080/api/v1/user/${user.username}`, fd, {
+      await axios.put(`http://localhost:8080/api/v1/user/${user.email}`, fd, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -158,7 +177,8 @@ function UserMenu() {
         withCredentials: true,
       });
 
-      const res = await axios.get(`http://localhost:8080/api/v1/user/${user.username}`, {
+      // Fetch lại user sau khi update
+      const res = await axios.get(`http://localhost:8080/api/v1/user/${user.email}`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
@@ -170,9 +190,7 @@ function UserMenu() {
         password: "",
         isActive: res.data.isActive ?? true,
         imageFile: null,
-        imagePreview: res.data.imageUrl
-          ? `http://localhost:8080${res.data.imageUrl}`
-          : null,
+        imagePreview: getImageUrl(res.data.imageUrl), // ✅ Sử dụng hàm helper
       });
 
       setEditMode(false);
@@ -197,18 +215,18 @@ function UserMenu() {
             <div className="card p-4 shadow-lg" style={{ borderRadius: "15px" }}>
               <div className="text-center">
                 <img
-                  src={form.imagePreview || "/placeholder-avatar.png"}
+                  src={form.imagePreview || "/placeholder-avatar.png"} // ✅ Đã xử lý qua getImageUrl trong form
                   alt="User Avatar"
                   className="rounded-circle shadow-sm mb-3"
                   style={{ width: "120px", height: "120px", objectFit: "cover" }}
                 />
-                <h4 className="mb-3">{user.username}</h4>
+                <h4 className="mb-3">{user.name || user.email}</h4>
               </div>
 
               {editMode ? (
                 <>
                   <div className="mb-2">
-                    <label className="form-label">Tên</label>
+                    <label className="form-label">Tên hiển thị</label>
                     <input
                       type="text"
                       className="form-control"
@@ -223,6 +241,7 @@ function UserMenu() {
                       type="email"
                       className="form-control"
                       value={form.email}
+                      disabled
                       onChange={(e) => onChangeField("email", e.target.value)}
                     />
                   </div>
@@ -241,11 +260,12 @@ function UserMenu() {
                   </div>
 
                   <div className="mb-2">
-                    <label className="form-label">Mật khẩu (để trống nếu không đổi)</label>
+                    <label className="form-label">Mật khẩu mới</label>
                     <input
                       type="password"
                       className="form-control"
                       value={form.password}
+                      placeholder="Để trống nếu không đổi"
                       onChange={(e) => onChangeField("password", e.target.value)}
                     />
                   </div>
@@ -253,7 +273,6 @@ function UserMenu() {
                   <div className="mb-3">
                     <label className="form-label">Ảnh đại diện</label>
                     <input type="file" accept="image/*" className="form-control" onChange={onSelectImage} />
-                    {form.imageFile && <div className="small mt-1">File: {form.imageFile.name}</div>}
                   </div>
 
                   <div className="d-grid gap-2">
@@ -268,7 +287,7 @@ function UserMenu() {
               ) : (
                 <>
                   <p>
-                    <b>👤 Username:</b> {user.username}
+                    <b>👤 Tên:</b> {user.name}
                   </p>
                   <p>
                     <b>📧 Email:</b> {user.email}
@@ -279,7 +298,7 @@ function UserMenu() {
 
                   <div className="d-grid gap-2">
                     <button className="btn btn-warning" onClick={handleEditClick}>
-                      Sửa
+                      Sửa thông tin
                     </button>
                   </div>
                 </>
@@ -302,36 +321,32 @@ function UserMenu() {
                     <div key={post.id} className="col-12">
                       <div className="card shadow-sm" style={{ borderRadius: "10px" }}>
                         <div className="card-body">
-                          {/* Post Header */}
                           <div className="d-flex align-items-center mb-3">
                             <img
-                              src={post.authorAvatar ? `http://localhost:8080${post.authorAvatar}` : "/placeholder-avatar.png"}
+                              src={getImageUrl(post.authorAvatar) || "/placeholder-avatar.png"} // ✅ Sử dụng hàm helper
                               alt={post.authorName}
                               className="rounded-circle me-2"
                               style={{ width: "40px", height: "40px", objectFit: "cover" }}
                             />
                             <div>
                               <strong>{post.authorName}</strong>
-                              <div className="text-muted small">@{user.username}</div>
+                              <div className="text-muted small">{post.createdAt || "Vừa xong"}</div>
                             </div>
                           </div>
 
-                          {/* Post Content */}
                           {post.content && (
                             <p className="mb-3">{post.content}</p>
                           )}
 
-                          {/* Post Image */}
                           {post.imageUrl && (
                             <img
-                              src={`http://localhost:8080${post.imageUrl}`}
+                              src={getImageUrl(post.imageUrl)} // ✅ Sử dụng hàm helper
                               alt="Post"
                               className="img-fluid rounded mb-3"
                               style={{ maxHeight: "400px", objectFit: "cover", width: "100%" }}
                             />
                           )}
 
-                          {/* Music Link */}
                           {post.musicLink && (
                             <div className="mb-3">
                               <audio controls className="w-100">
@@ -341,7 +356,6 @@ function UserMenu() {
                             </div>
                           )}
 
-                          {/* Post Footer */}
                           <div className="d-flex align-items-center text-muted">
                             <span className="me-3">
                               ❤️ {post.likes} lượt thích
