@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import Footer from "../../components/layout/Footer";
 import Header from "../../components/layout/Header";
+import Footer from "../../components/layout/Footer";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./css/Block.css"; // Reuse modern styles
 
 function CreateUser() {
   const [form, setForm] = useState({
@@ -10,10 +12,11 @@ function CreateUser() {
     username: "",
     password: "",
     email: "",
-    roles: []   // ✅ thêm roles
+    roles: []
   });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -23,26 +26,25 @@ function CreateUser() {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    setImage(file);
     if (file) {
+      setImage(file);
       setPreview(URL.createObjectURL(file));
     }
   };
 
-  // ✅ handle chọn role
-  const handleRoleChange = (e) => {
-    const { value, checked } = e.target;
+  const handleRoleChange = (role) => {
     let newRoles = [...form.roles];
-    if (checked) {
-      newRoles.push(value);
+    if (newRoles.includes(role)) {
+      newRoles = newRoles.filter((r) => r !== role);
     } else {
-      newRoles = newRoles.filter((r) => r !== value);
+      newRoles.push(role);
     }
     setForm({ ...form, roles: newRoles });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       const formData = new FormData();
       const userData = {
@@ -50,7 +52,7 @@ function CreateUser() {
         username: form.username,
         password: form.password,
         email: form.email,
-        roles: form.roles   // ✅ gửi roles
+        roles: form.roles // Mặc định role USER nếu rỗng? Tùy backend. Code cũ cho phép rỗng.
       };
 
       formData.append(
@@ -61,127 +63,179 @@ function CreateUser() {
 
       const token = localStorage.getItem("token");
 
-      const res = await axios.post("http://localhost:8080/api/v1/user", formData, {
+      await axios.post("http://localhost:8080/api/v1/user", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
       });
 
-      alert("✅ Tạo user thành công!");
+      alert("✨ Tạo user thành công!");
       navigate("/admin");
     } catch (err) {
       console.error(err);
-      alert("❌ Lỗi khi tạo user!");
+      alert("❌ Lỗi khi tạo user! Vui lòng kiểm tra lại.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <>
+    <div className="dashboard-container">
       <Header />
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
-        <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md">
-          <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-            ✨ Tạo User Mới
-          </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-gray-600 mb-1">Tên</label>
-              <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none"
-              />
-            </div>
+      <div className="container mt-4">
+        {/* Simple Back Breadcrumb */}
+        <div className="mb-4">
+          <button onClick={() => navigate('/admin')} className="btn btn-link text-decoration-none ps-0 text-muted fw-bold">
+            <i className="bi bi-arrow-left me-2"></i>Back to Dashboard
+          </button>
+        </div>
 
-            <div>
-              <label className="block text-gray-600 mb-1">Username</label>
-              <input
-                type="text"
-                name="username"
-                value={form.username}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none"
-              />
-            </div>
+        <form onSubmit={handleSubmit}>
+          <div className="row justify-content-center">
 
-            <div>
-              <label className="block text-gray-600 mb-1">Password</label>
-              <input
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none"
-              />
-            </div>
+            {/* Left Column: Avatar & Basic Info */}
+            <div className="col-lg-4 mb-4">
+              <div className="main-card p-4 text-center h-100">
+                <h5 className="fw-bold mb-4 text-start">Profile Picture</h5>
 
-            <div>
-              <label className="block text-gray-600 mb-1">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none"
-              />
-            </div>
-
-            {/* ✅ Thêm chọn role */}
-            <div>
-              <label className="block text-gray-600 mb-1">Role</label>
-              <div className="flex space-x-4">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    value="ADMIN"
-                    checked={form.roles.includes("ADMIN")}
-                    onChange={handleRoleChange}
-                  />
-                  <span>ADMIN</span>
+                <label className="avatar-upload-area">
+                  <input type="file" onChange={handleFileChange} hidden accept="image/*" />
+                  {preview ? (
+                    <img src={preview} alt="Preview" className="avatar-preview" />
+                  ) : (
+                    <div className="upload-placeholder">
+                      <i className="bi bi-camera"></i>
+                      <span className="small fw-bold">Upload Photo</span>
+                    </div>
+                  )}
                 </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    value="USER"
-                    checked={form.roles.includes("USER")}
-                    onChange={handleRoleChange}
-                  />
-                  <span>USER</span>
-                </label>
+                <p className="text-muted small mb-4">Allowed *.jpeg, *.jpg, *.png, *.gif</p>
+
+                <div className="text-start">
+                  <label className="form-label">Full Name</label>
+                  <div className="input-icon-wrapper mb-3">
+                    <i className="bi bi-person input-icon"></i>
+                    <input
+                      type="text"
+                      name="name"
+                      className="form-control-modern with-icon"
+                      placeholder="e.g. John Doe"
+                      value={form.name}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-gray-600 mb-1">Ảnh đại diện</label>
-              <input type="file" onChange={handleFileChange} className="w-full" />
-              {preview && (
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="mt-3 w-24 h-24 object-cover rounded-full border shadow-md mx-auto"
-                />
-              )}
-            </div>
+            {/* Right Column: Account Details */}
+            <div className="col-lg-8 mb-4">
+              <div className="main-card p-4 h-100">
+                <h5 className="fw-bold mb-4">Account Details</h5>
 
-            <button
-              type="submit"
-              className="w-full py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold shadow-lg hover:opacity-90 transition duration-200"
-            >
-              🚀 Tạo User
-            </button>
-          </form>
-        </div>
+                <div className="row">
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Username</label>
+                    <div className="input-icon-wrapper">
+                      <i className="bi bi-at input-icon"></i>
+                      <input
+                        type="text"
+                        name="username"
+                        className="form-control-modern with-icon"
+                        placeholder="johndoe123"
+                        value={form.username}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Email Address</label>
+                    <div className="input-icon-wrapper">
+                      <i className="bi bi-envelope input-icon"></i>
+                      <input
+                        type="email"
+                        name="email"
+                        className="form-control-modern with-icon"
+                        placeholder="john@example.com"
+                        value={form.email}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="col-md-12 mb-3">
+                    <label className="form-label">Password</label>
+                    <div className="input-icon-wrapper">
+                      <i className="bi bi-lock input-icon"></i>
+                      <input
+                        type="password"
+                        name="password"
+                        className="form-control-modern with-icon"
+                        placeholder="Set a strong password"
+                        value={form.password}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="col-md-12 mb-4">
+                    <label className="form-label d-block mb-3">Assign Roles</label>
+                    <div className="role-checkbox-group">
+                      <label className={`role-option ${form.roles.includes('ADMIN') ? 'checked' : ''}`}>
+                        <input
+                          type="checkbox"
+                          hidden
+                          checked={form.roles.includes('ADMIN')}
+                          onChange={() => handleRoleChange('ADMIN')}
+                        />
+                        <i className={`bi bi-${form.roles.includes('ADMIN') ? 'check-circle-fill' : 'circle'} text-primary me-1`}></i>
+                        <span>ADMIN</span>
+                      </label>
+
+                      <label className={`role-option ${form.roles.includes('USER') ? 'checked' : ''}`}>
+                        <input
+                          type="checkbox"
+                          hidden
+                          checked={form.roles.includes('USER')}
+                          onChange={() => handleRoleChange('USER')}
+                        />
+                        <i className={`bi bi-${form.roles.includes('USER') ? 'check-circle-fill' : 'circle'} text-primary me-1`}></i>
+                        <span>USER</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="d-flex justify-content-end gap-3 pt-3 border-top mt-2">
+                  <button
+                    type="button"
+                    className="btn-secondary-modern"
+                    onClick={() => navigate('/admin')}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary-modern"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Creating...' : 'Create User'}
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </form>
       </div>
-      <Footer />
-    </>
+
+      {/* <Footer /> */}
+    </div>
   );
 }
 
