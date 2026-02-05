@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import axiosClient from "./axiosClient";
+import axiosClient from "../../services/axiosClient";
 
 function Header() {
   const navigate = useNavigate();

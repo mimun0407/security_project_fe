@@ -2,17 +2,17 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import Header from "./Header";
-import Footer from "./Footer";
+import Header from "../../components/layout/Header";
+import Footer from "../../components/layout/Footer";
 
 function UserMenu() {
   // 1. Đổi cách lấy tham số: Ưu tiên lấy email
-  const { email: paramEmail } = useParams(); 
+  const { email: paramEmail } = useParams();
   const navigate = useNavigate();
-  
+
   // Lấy email từ localStorage
-  const storedEmail = localStorage.getItem("email"); 
-  
+  const storedEmail = localStorage.getItem("email");
+
   // Biến định danh chính bây giờ là email
   const userEmail = paramEmail || storedEmail;
 
@@ -35,12 +35,12 @@ function UserMenu() {
   // ✅ HÀM HELPER XỬ LÝ URL ẢNH
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-    
+
     // Nếu là URL đầy đủ (http/https) từ Google thì dùng luôn
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    
+
     // Nếu là đường dẫn local thì ghép với localhost
     return `http://localhost:8080${imageUrl}`;
   };
@@ -48,7 +48,7 @@ function UserMenu() {
   // --- FETCH USER INFO ---
   useEffect(() => {
     const token = localStorage.getItem("token");
-    
+
     if (!token || !userEmail) {
       console.error("Thiếu token hoặc email, chuyển về login");
       navigate("/login");
@@ -154,7 +154,7 @@ function UserMenu() {
 
       const payload = {
         name: form.name,
-        username: user.username, 
+        username: user.username,
         email: form.email,
         isActive: form.isActive,
         ...(form.password ? { password: form.password } : {}),
@@ -310,7 +310,7 @@ function UserMenu() {
           <div className="col-md-8">
             <div className="card shadow-lg p-4" style={{ borderRadius: "15px" }}>
               <h4 className="mb-4">📝 Bài viết của tôi ({posts.length})</h4>
-              
+
               {loadingPosts ? (
                 <div className="text-center">Đang tải bài viết...</div>
               ) : posts.length === 0 ? (

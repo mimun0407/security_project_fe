@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import Footer from "./Footer";
-import Header from "./Header";
+import Footer from "../../components/layout/Footer";
+import Header from "../../components/layout/Header";
 
 function CreateUser() {
   const [form, setForm] = useState({
