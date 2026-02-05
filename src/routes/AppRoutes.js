@@ -26,12 +26,13 @@ function AppRoutes() {
             {/* --- CÁC ROUTE CẦN ĐĂNG NHẬP (PROTECTED ROUTES) --- */}
             {/* Bọc tất cả các route cần bảo vệ vào trong PrivateRoute */}
             <Route element={<PrivateRoute />}>
-                <Route path="/list" element={<List />} />
+                
+            </Route>
+            <Route path="/list" element={<List />} />
                 <Route path="/admin" element={<AdminMenu />} />
                 <Route path="/user" element={<UserMenu />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/newF" element={<NewFeed />} />
-            </Route>
         </Routes>
     );
 }

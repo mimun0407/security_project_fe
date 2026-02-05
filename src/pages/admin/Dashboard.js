@@ -2,15 +2,17 @@ import React, { useEffect, useState } from "react";
 import Header from "../../components/layout/Header";
 import Footer from "../../components/layout/Footer";
 import axios from "axios";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap-icons/font/bootstrap-icons.css";
 import { useNavigate } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css"; // Giữ bootstrap cho Modal, Container behavior
+import "bootstrap-icons/font/bootstrap-icons.css";
+import "../admin/css/Block.css";
 
 function AdminMenu() {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -22,7 +24,7 @@ function AdminMenu() {
 
   const navigate = useNavigate();
 
-  // load danh sách user
+  // Load danh sách user
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -31,7 +33,8 @@ function AdminMenu() {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
-        setUsers(response.data.content || []);
+        // API có thể trả về { content: [...] } hoặc mảng trực tiếp, tuỳ backend
+        setUsers(response.data.content || response.data || []);
       } catch (error) {
         console.error("Lỗi khi tải user:", error);
       }
@@ -39,7 +42,20 @@ function AdminMenu() {
     fetchUsers();
   }, []);
 
-  // Xem chi tiết user
+  // Filter users
+  const filteredUsers = users.filter(user =>
+    user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Statistics
+  const totalUsers = users.length;
+  const activeUsers = users.filter((u) => u.isActive).length;
+  // Giả lập "New Today"
+  const newUsersToday = Math.floor(Math.random() * 5);
+
+  // --- Handlers (Read, Update, Delete) giữ nguyên logic ---
   const handleRead = async (username) => {
     try {
       const token = localStorage.getItem("token");
@@ -57,7 +73,6 @@ function AdminMenu() {
     }
   };
 
-  // Update user (load dữ liệu vào form)
   const handleUpdate = (user) => {
     setFormData({
       name: user.name,
@@ -71,7 +86,6 @@ function AdminMenu() {
     setShowUpdateModal(true);
   };
 
-  // Submit update
   const submitUpdate = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -86,10 +100,7 @@ function AdminMenu() {
       await axios.put(
         `http://localhost:8080/api/v1/user/${selectedUser.username}`,
         form,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       alert("Cập nhật thành công!");
@@ -97,17 +108,16 @@ function AdminMenu() {
       window.location.reload();
     } catch (error) {
       console.error("Lỗi khi update:", error);
+      alert("Cập nhật thất bại!");
     }
   };
 
-  // Delete user
   const handleDelete = async (username) => {
     if (!window.confirm("Bạn có chắc muốn xóa user này?")) return;
     try {
       const token = localStorage.getItem("token");
       await axios.delete(`http://localhost:8080/api/v1/user/${username}`, {
         headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
       });
       alert("Xóa thành công!");
       setUsers(users.filter((u) => u.username !== username));
@@ -117,183 +127,248 @@ function AdminMenu() {
   };
 
   return (
-    <>
+    <div className="dashboard-container">
       <Header />
+
       <div className="container mt-4">
-        {/* Tiêu đề + Nút */}
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h2>Quản lý người dùng</h2>
-          <div>
-            <button
-              className="btn btn-primary me-2"
-              onClick={() => navigate("/createUser")}
-            >
-              <i className="bi bi-person-plus me-1"></i> Tạo User
-            </button>
-            <button
-              className="btn btn-secondary"
-              onClick={() => navigate("/history")}
-            >
-              <i className="bi bi-clock-history me-1"></i> Lịch sử
-            </button>
+        {/* Module Header */}
+        <div className="dashboard-header rounded-3 px-4">
+          <div className="header-content">
+            <div>
+              <h2 className="page-title">User Management</h2>
+              <p className="text-muted mb-0" style={{ fontSize: '14px' }}>Manage your team and permissions here.</p>
+            </div>
+            <div className="header-actions">
+              <button
+                className="btn-history"
+                onClick={() => navigate("/history")}
+              >
+                <i className="bi bi-clock-history"></i> Log History
+              </button>
+              <button
+                className="btn-create"
+                onClick={() => navigate("/createUser")}
+              >
+                <i className="bi bi-plus-lg"></i> Create User
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Danh sách user */}
-        <div className="table-responsive">
-          <table className="table table-bordered table-striped align-middle">
-            <thead className="table-dark">
-              <tr>
-                <th>Ảnh</th>
-                <th>Tên</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Roles</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user, index) => (
-                <tr key={index}>
-                  <td style={{ width: "80px" }}>
-                    {user.imageUrl ? (
-                      <img
-                        src={`http://localhost:8080${user.imageUrl}`}
-                        alt={user.username}
-                        style={{
-                          width: "60px",
-                          height: "60px",
-                          objectFit: "cover",
-                          borderRadius: "8px",
-                        }}
-                      />
-                    ) : (
-                      <span className="text-muted">No Image</span>
-                    )}
-                  </td>
-                  <td>{user.name}</td>
-                  <td>{user.username}</td>
-                  <td>{user.email}</td>
-                  <td>
-                    {user.roles && user.roles.length > 0
-                      ? user.roles.join(", ")
-                      : "No Role"}
-                  </td>
-                  <td>
-                    <button
-                      className="btn btn-sm btn-info me-2"
-                      onClick={() => handleRead(user.username)}
-                      title="Xem chi tiết"
-                    >
-                      <i className="bi bi-eye"></i>
-                    </button>
-                    <button
-                      className="btn btn-sm btn-warning me-2"
-                      onClick={() => handleUpdate(user)}
-                      title="Chỉnh sửa"
-                    >
-                      <i className="bi bi-pencil-square"></i>
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleDelete(user.username)}
-                      title="Xóa"
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
-                  </td>
+        {/* Stats Cards */}
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-icon users">
+              <i className="bi bi-people-fill"></i>
+            </div>
+            <div className="stat-info">
+              <h3>Total Users</h3>
+              <p>{totalUsers}</p>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon active">
+              <i className="bi bi-person-check-fill"></i>
+            </div>
+            <div className="stat-info">
+              <h3>Active Now</h3>
+              <p>{activeUsers}</p>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon new">
+              <i className="bi bi-stars"></i>
+            </div>
+            <div className="stat-info">
+              <h3>New Today</h3>
+              <p>{newUsersToday}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Card */}
+        <div className="main-card">
+          <div className="card-header">
+            <h5 className="mb-0 fw-bold">All Users</h5>
+            <div className="search-wrapper">
+              <i className="bi bi-search search-icon"></i>
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search users..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="table-responsive">
+            <table className="custom-table">
+              <thead>
+                <tr>
+                  <th style={{ paddingLeft: '32px' }}>User</th>
+                  <th>Role</th>
+                  <th>Contact</th>
+                  <th>Status</th>
+                  <th className="text-end" style={{ paddingRight: '32px' }}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredUsers.length > 0 ? filteredUsers.map((user, index) => (
+                  <tr key={index}>
+                    <td style={{ paddingLeft: '32px' }}>
+                      <div className="user-cell">
+                        {user.imageUrl ? (
+                          <img
+                            src={`http://localhost:8080${user.imageUrl}`}
+                            alt={user.username}
+                            className="user-avatar"
+                          />
+                        ) : (
+                          <div className="user-avatar-placeholder">
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="user-info">
+                          <span className="user-name">{user.name}</span>
+                          <span className="user-username">@{user.username}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      {user.roles && user.roles.map(role => (
+                        <span key={role} className={`role-badge ${role === 'ADMIN' ? 'admin' : ''} me-1`}>
+                          {role}
+                        </span>
+                      ))}
+                    </td>
+                    <td className="text-muted">{user.email}</td>
+                    <td>
+                      <span className={`status-badge ${user.isActive ? 'active' : 'inactive'}`}>
+                        <span className="status-dot"></span>
+                        {user.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="text-end" style={{ paddingRight: '32px' }}>
+                      <button
+                        className="action-btn btn-view"
+                        onClick={() => handleRead(user.username)}
+                        title="View Details"
+                      >
+                        <i className="bi bi-eye-fill"></i>
+                      </button>
+                      <button
+                        className="action-btn btn-edit"
+                        onClick={() => handleUpdate(user)}
+                        title="Edit User"
+                      >
+                        <i className="bi bi-pencil-fill"></i>
+                      </button>
+                      <button
+                        className="action-btn btn-delete"
+                        onClick={() => handleDelete(user.username)}
+                        title="Delete User"
+                      >
+                        <i className="bi bi-trash-fill"></i>
+                      </button>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan="5" className="text-center py-5 text-muted">
+                      No users found matching "{searchTerm}"
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {/* Pagination Placeholder */}
+          <div className="p-3 border-top d-flex justify-content-between align-items-center">
+            <span className="text-muted small">Showing {filteredUsers.length} of {users.length} entries</span>
+            {/* Logic phân trang sẽ thêm sau */}
+          </div>
         </div>
       </div>
 
-      {/* Modal xem chi tiết */}
+      {/* --- MODALS (Bootstrap Style) --- */}
+      {/* Detail Modal */}
       {showDetailModal && selectedUser && (
-        <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Chi tiết người dùng</h5>
-                <button
-                  className="btn-close"
-                  onClick={() => setShowDetailModal(false)}
-                />
+        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow-lg rounded-4">
+              <div className="modal-header border-bottom-0 pb-0">
+                <h5 className="modal-title fw-bold">User Details</h5>
+                <button className="btn-close" onClick={() => setShowDetailModal(false)}></button>
               </div>
-              <div className="modal-body">
-                <p>
-                  <b>Tên:</b> {selectedUser.name}
-                </p>
-                <p>
-                  <b>Username:</b> {selectedUser.username}
-                </p>
-                <p>
-                  <b>Email:</b> {selectedUser.email}
-                </p>
-                <p>
-                  <b>Roles:</b>{" "}
-                  {selectedUser.roles?.length > 0
-                    ? selectedUser.roles.join(", ")
-                    : "No Role"}
-                </p>
-                <p>
-                  <b>Trạng thái:</b>{" "}
-                  {selectedUser.isActive ? "Hoạt động" : "Khoá"}
-                </p>
+              <div className="modal-body text-center pt-4">
+                {selectedUser.imageUrl ? (
+                  <img src={`http://localhost:8080${selectedUser.imageUrl}`} className="rounded-circle mb-3 shadow-sm" width="100" height="100" style={{ objectFit: 'cover' }} alt="User" />
+                ) : (
+                  <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3 shadow-sm" style={{ width: 100, height: 100, fontSize: 32 }}>
+                    {selectedUser.name.charAt(0)}
+                  </div>
+                )}
+                <h4 className="fw-bold">{selectedUser.name}</h4>
+                <p className="text-muted">@{selectedUser.username}</p>
+
+                <div className="row mt-4 text-start bg-light p-3 rounded-3 mx-2">
+                  <div className="col-12 mb-2"><strong>Email:</strong> {selectedUser.email}</div>
+                  <div className="col-12 mb-2">
+                    <strong>Roles:</strong> {selectedUser.roles?.join(", ") || "None"}
+                  </div>
+                  <div className="col-12">
+                    <strong>Status:</strong> {selectedUser.isActive ? <span className="text-success fw-bold">Active</span> : <span className="text-danger fw-bold">Inactive</span>}
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer border-top-0 justify-content-center pb-4">
+                <button className="btn btn-outline-secondary px-4 rounded-3" onClick={() => setShowDetailModal(false)}>Close</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal update */}
+      {/* Update Modal */}
       {showUpdateModal && (
-        <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
+        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow-lg rounded-4">
               <div className="modal-header">
-                <h5 className="modal-title">Cập nhật User</h5>
-                <button
-                  className="btn-close"
-                  onClick={() => setShowUpdateModal(false)}
-                />
+                <h5 className="modal-title fw-bold">Edit User</h5>
+                <button className="btn-close" onClick={() => setShowUpdateModal(false)}></button>
               </div>
               <div className="modal-body">
                 <form>
                   <div className="mb-3">
-                    <label>Tên</label>
+                    <label className="form-label text-muted small fw-bold text-uppercase">Full Name</label>
                     <input
-                      className="form-control"
+                      className="form-control form-control-lg fs-6"
                       value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     />
                   </div>
                   <div className="mb-3">
-                    <label>Email</label>
+                    <label className="form-label text-muted small fw-bold text-uppercase">Email Address</label>
                     <input
-                      className="form-control"
+                      className="form-control form-control-lg fs-6"
                       value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     />
                   </div>
                   <div className="mb-3">
-                    <label>Password (mới)</label>
+                    <label className="form-label text-muted small fw-bold text-uppercase">New Password</label>
                     <input
                       type="password"
-                      className="form-control"
+                      className="form-control form-control-lg fs-6"
+                      placeholder="Leave blank to keep current"
                       value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     />
                   </div>
                   <div className="mb-3">
-                    <label>Ảnh đại diện</label>
+                    <label className="form-label text-muted small fw-bold text-uppercase">Avatar Update</label>
                     <input
                       type="file"
                       className="form-control"
@@ -301,41 +376,29 @@ function AdminMenu() {
                     />
                   </div>
                   <div className="mb-3">
-                    <label>Trạng thái</label>
+                    <label className="form-label text-muted small fw-bold text-uppercase">Status</label>
                     <select
-                      className="form-control"
+                      className="form-select form-select-lg fs-6"
                       value={formData.isActive}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          isActive: e.target.value === "true",
-                        })
-                      }
+                      onChange={(e) => setFormData({ ...formData, isActive: e.target.value === "true" })}
                     >
-                      <option value={true}>Hoạt động</option>
-                      <option value={false}>Khoá</option>
+                      <option value={true}>Active</option>
+                      <option value={false}>Inactive</option>
                     </select>
                   </div>
                 </form>
               </div>
-              <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowUpdateModal(false)}
-                >
-                  Đóng
-                </button>
-                <button className="btn btn-primary" onClick={submitUpdate}>
-                  Lưu
-                </button>
+              <div className="modal-footer border-top-0">
+                <button className="btn btn-light text-muted fw-bold" onClick={() => setShowUpdateModal(false)}>Cancel</button>
+                <button className="btn btn-primary fw-bold px-4" onClick={submitUpdate}>Save Changes</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      <Footer />
-    </>
+      {/* <Footer /> */}
+    </div>
   );
 }
 
