@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import BQMusicLogo from "../../components/common/BQMusicLogo";
 import { useAuth } from "../../context/AuthContext";
-import './Login.css';
+import '../auth/css/Login.css';
 
 function Login() {
   const [username, setUsername] = useState("");
@@ -142,12 +142,12 @@ function Login() {
               Log in with Google
             </button>
 
-            <a href="/forgot-password" style={{ display: 'block', textAlign: 'center', marginTop: '15px', fontSize: '12px', color: '#00376b', textDecoration: 'none' }}>
+            <a href="/forgot-password" onClick={(e) => { e.preventDefault(); navigate('/forgot-password'); }} style={{ display: 'block', textAlign: 'center', marginTop: '15px', fontSize: '12px', color: '#00376b', textDecoration: 'none', cursor: 'pointer' }}>
               Forgot password?
             </a>
 
             <div className="signup-box" style={{ marginTop: '20px', textAlign: 'center', fontSize: '14px' }}>
-              Don't have an account? <button onClick={() => navigate("/createUser")} style={{ border: 'none', background: 'none', color: '#0095f6', fontWeight: 'bold', cursor: 'pointer' }}>Sign up</button>
+              Don't have an account? <button onClick={() => navigate("/register")} style={{ border: 'none', background: 'none', color: '#0095f6', fontWeight: 'bold', cursor: 'pointer' }}>Register</button>
             </div>
           </div>
         </div>
