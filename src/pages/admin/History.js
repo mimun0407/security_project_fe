@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import axiosClient from "./axiosClient";
-import Header from "./Header";
-import Footer from "./Footer";
+import axiosClient from "../../services/axiosClient";
+import Header from "../../components/layout/Header";
+import Footer from "../../components/layout/Footer";
 
 function History() {
   const [logs, setLogs] = useState([]);
