@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Header from "../../components/layout/Header";
-import Footer from "../../components/layout/Footer";
+
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css"; // Giữ bootstrap cho Modal, Container behavior
@@ -15,7 +15,6 @@ function AdminMenu() {
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     name: "",
-    username: "",
     email: "",
     isActive: true,
     password: "",
@@ -45,7 +44,6 @@ function AdminMenu() {
   // Filter users
   const filteredUsers = users.filter(user =>
     user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -56,11 +54,11 @@ function AdminMenu() {
   const newUsersToday = Math.floor(Math.random() * 5);
 
   // --- Handlers (Read, Update, Delete) giữ nguyên logic ---
-  const handleRead = async (username) => {
+  const handleRead = async (email) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:8080/api/v1/user/${username}`,
+        `http://localhost:8080/api/v1/user/${email}`,
         {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
@@ -76,7 +74,6 @@ function AdminMenu() {
   const handleUpdate = (user) => {
     setFormData({
       name: user.name,
-      username: user.username,
       email: user.email,
       isActive: user.isActive,
       password: "",
@@ -91,14 +88,13 @@ function AdminMenu() {
       const token = localStorage.getItem("token");
       const form = new FormData();
       form.append("name", formData.name);
-      form.append("username", formData.username);
       form.append("email", formData.email);
       form.append("isActive", formData.isActive);
       if (formData.password) form.append("password", formData.password);
       if (image) form.append("image", image);
 
       await axios.put(
-        `http://localhost:8080/api/v1/user/${selectedUser.username}`,
+        `http://localhost:8080/api/v1/user/${selectedUser.email}`,
         form,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -112,15 +108,15 @@ function AdminMenu() {
     }
   };
 
-  const handleDelete = async (username) => {
+  const handleDelete = async (email) => {
     if (!window.confirm("Bạn có chắc muốn xóa user này?")) return;
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:8080/api/v1/user/${username}`, {
+      await axios.delete(`http://localhost:8080/api/v1/user/${email}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("Xóa thành công!");
-      setUsers(users.filter((u) => u.username !== username));
+      setUsers(users.filter((u) => u.email !== email));
     } catch (error) {
       console.error("Lỗi khi xóa user:", error);
     }
@@ -221,7 +217,7 @@ function AdminMenu() {
                         {user.imageUrl ? (
                           <img
                             src={`http://localhost:8080${user.imageUrl}`}
-                            alt={user.username}
+                            alt={user.email}
                             className="user-avatar"
                           />
                         ) : (
@@ -231,7 +227,6 @@ function AdminMenu() {
                         )}
                         <div className="user-info">
                           <span className="user-name">{user.name}</span>
-                          <span className="user-username">@{user.username}</span>
                         </div>
                       </div>
                     </td>
@@ -252,7 +247,7 @@ function AdminMenu() {
                     <td className="text-end" style={{ paddingRight: '32px' }}>
                       <button
                         className="action-btn btn-view"
-                        onClick={() => handleRead(user.username)}
+                        onClick={() => handleRead(user.email)}
                         title="View Details"
                       >
                         <i className="bi bi-eye-fill"></i>
@@ -266,7 +261,7 @@ function AdminMenu() {
                       </button>
                       <button
                         className="action-btn btn-delete"
-                        onClick={() => handleDelete(user.username)}
+                        onClick={() => handleDelete(user.email)}
                         title="Delete User"
                       >
                         <i className="bi bi-trash-fill"></i>
@@ -310,7 +305,7 @@ function AdminMenu() {
                   </div>
                 )}
                 <h4 className="fw-bold">{selectedUser.name}</h4>
-                <p className="text-muted">@{selectedUser.username}</p>
+                <p className="text-muted">{selectedUser.email}</p>
 
                 <div className="row mt-4 text-start bg-light p-3 rounded-3 mx-2">
                   <div className="col-12 mb-2"><strong>Email:</strong> {selectedUser.email}</div>

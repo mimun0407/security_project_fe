@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axiosClient from "../../services/axiosClient";
 import Header from "../../components/layout/Header";
-import Footer from "../../components/layout/Footer";
+
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -69,7 +69,6 @@ function History() {
 
   // Stats
   const totalLogs = logs.length;
-  const createActions = logs.filter(l => l.action === 'CREATE').length;
   const updateActions = logs.filter(l => l.action === 'UPDATE').length;
   const deleteActions = logs.filter(l => l.action === 'DELETE').length;
 

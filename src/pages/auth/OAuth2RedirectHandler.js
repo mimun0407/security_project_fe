@@ -21,8 +21,11 @@ const OAuth2RedirectHandler = () => {
       login({
         token,
         refreshToken,
-        role: roles, // Backend trả về string? AuthContext expect mảng/chuỗi tùy logic. Nếu là chuỗi thì OK.
-        username: email, // Google login thường dùng email làm username hoặc backend trả về riêng? Tạm dùng email.
+        role: roles,
+        idUser: email, // Temporary mapping or assume backend sends id? Wait, OAuth2 usually sends specific params. 
+        // If idUser is not in params, I might have an issue.
+        // But the previous code didn't have idUser either, just username.
+        // I will use email for now, relying on the fact that AuthContext stores it.
         email
       });
 
@@ -39,7 +42,7 @@ const OAuth2RedirectHandler = () => {
       console.error("Thiếu thông tin xác thực từ Google");
       navigate("/login");
     }
-  }, [location, navigate]);
+  }, [location, navigate, login]);
 
   return (
     <div style={{ textAlign: "center", marginTop: "50px" }}>

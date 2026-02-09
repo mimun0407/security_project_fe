@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Search, Compass, MessageCircle, Heart, PlusSquare, Menu, User, Settings, Activity, Bookmark, Moon, AlertCircle, LogOut } from 'lucide-react';
+import { Home, Search, Compass, MessageCircle, Heart, PlusSquare, Menu, User, Settings, Activity, Bookmark, Moon, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = ({ onOpenCreateModal }) => {

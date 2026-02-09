@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { X, Image as ImageIcon, Music, Loader2, UploadCloud, Disc } from 'lucide-react';
+import { X, Image as ImageIcon, Music, Loader2, UploadCloud } from 'lucide-react';
 import axiosClient from '../../services/axiosClient';
 
 const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {

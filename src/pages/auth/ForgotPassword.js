@@ -1,32 +1,55 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import '../auth/css/Login.css';
+import userService from "../../services/userService";
 
 function ForgotPassword() {
     const [email, setEmail] = useState("");
+    const [otp, setOtp] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [isSent, setIsSent] = useState(false);
+    const [isSent, setIsSent] = useState(false); // True if email send success
+    const [isVerified, setIsVerified] = useState(false); // True if OTP verified
+    const [errorMessage, setErrorMessage] = useState("");
     const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
+    const handleSendOtp = async (e) => {
         e.preventDefault();
         setIsLoading(true);
+        setErrorMessage("");
 
         try {
-            // Gọi API gửi mail reset password
-            // Giả định backend endpoint: POST /api/v1/auth/forgot-password or user/forgot-password
-            // Hiện tại mock success để demo UI
+            const response = await userService.sendOtpForgot(email);
 
-            // const res = await axios.post("http://localhost:8080/api/v1/auth/forgot-password", { email });
-
-            // Giả lập delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            setIsSent(true);
+            if (response && response.success) {
+                setIsSent(true);
+            } else {
+                setErrorMessage(response.message || "Something went wrong. Please try again.");
+            }
         } catch (err) {
             console.error(err);
-            alert("Có lỗi xảy ra! Vui lòng thử lại sau.");
+            setErrorMessage("Failed to send OTP. Please check your email or try again later.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setErrorMessage("");
+
+        try {
+            const response = await userService.verifyOtpForgot(email, otp);
+
+            if (response && response.success) {
+                setIsVerified(true);
+                // Optional: Redirect to reset password page or show success
+            } else {
+                setErrorMessage(response.message || "Invalid OTP. Please try again.");
+            }
+        } catch (err) {
+            console.error(err);
+            setErrorMessage("Failed to verify OTP. Please try again later.");
         } finally {
             setIsLoading(false);
         }
@@ -50,11 +73,17 @@ function ForgotPassword() {
                     <h4 style={{ fontWeight: '600', fontSize: '18px', marginBottom: '10px', color: '#262626' }}>Trouble Logging In?</h4>
 
                     <p style={{ color: '#8e8e8e', fontSize: '14px', lineHeight: '18px', marginBottom: '25px' }}>
-                        Enter your email and we'll send you a link to get back into your account.
+                        {isSent ? "Enter the code we sent to your email." : "Enter your email and we'll send you a link to get back into your account."}
                     </p>
 
+                    {errorMessage && (
+                        <div className="alert-message alert-error">
+                            {errorMessage}
+                        </div>
+                    )}
+
                     {!isSent ? (
-                        <form onSubmit={handleSubmit} className="login-form">
+                        <form onSubmit={handleSendOtp} className="login-form">
                             <div className="form-group">
                                 <input
                                     type="email"
@@ -74,10 +103,53 @@ function ForgotPassword() {
                                 {isLoading ? 'Sending...' : 'Send Login Link'}
                             </button>
                         </form>
+                    ) : !isVerified ? (
+                        <form onSubmit={handleVerifyOtp} className="login-form">
+                            <div className="alert-message alert-success" style={{ marginBottom: '15px' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Email sent!</div>
+                                <div>Check your email for the OTP code.</div>
+                            </div>
+
+                            <div className="form-group">
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Enter OTP Code"
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value)}
+                                    required
+                                    style={{ textAlign: 'center', letterSpacing: '4px', fontWeight: 'bold' }}
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="login-button"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? 'Verifying...' : 'Verify OTP'}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setIsSent(false)}
+                                style={{
+                                    border: 'none',
+                                    background: 'none',
+                                    color: '#0095f6',
+                                    fontWeight: '600',
+                                    fontSize: '12px',
+                                    cursor: 'pointer',
+                                    marginTop: '10px'
+                                }}
+                            >
+                                Change Email
+                            </button>
+                        </form>
                     ) : (
-                        <div style={{ marginBottom: '20px' }}>
-                            <div style={{ color: '#0095f6', fontSize: '14px', marginBottom: '10px' }}>Email sent!</div>
-                            <p style={{ color: '#8e8e8e', fontSize: '14px' }}>Check your email for the link to reset your password.</p>
+                        <div className="alert-message alert-success">
+                            <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>OTP Verified!</div>
+                            <div>You can now reset your password. (Next step implementation)</div>
                         </div>
                     )}
 

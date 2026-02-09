@@ -1,64 +1,193 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import BQMusicLogo from "../../components/common/BQMusicLogo";
 import '../auth/css/Login.css';
+import userService from "../../services/userService";
+import { useAuth } from "../../context/AuthContext";
 
 function Register() {
+    const navigate = useNavigate();
+    const { login } = useAuth();
+
+    // Steps: 1 = Email, 2 = OTP, 3 = Details
+    const [step, setStep] = useState(1);
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
+
+    // Step 1: Email
+    const [email, setEmail] = useState("");
+
+    // Step 2: OTP
+    const [otp, setOtp] = useState("");
+    const [timeLeft, setTimeLeft] = useState(90); // 90 seconds
+    const [canResend, setCanResend] = useState(false);
+
+    // Step 3: Details
     const [form, setForm] = useState({
         name: "",
-        username: "",
         password: "",
-        confirmPassword: "",
-        email: "",
+        rePassword: "",
     });
-    const [isLoading, setIsLoading] = useState(false);
-    const navigate = useNavigate();
 
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+    // Timer logic for OTP
+    useEffect(() => {
+        let interval = null;
+        if (step === 2 && timeLeft > 0) {
+            interval = setInterval(() => {
+                setTimeLeft(prev => prev - 1);
+            }, 1000);
+        } else if (timeLeft === 0) {
+            setCanResend(true);
+            clearInterval(interval);
+        }
+        return () => clearInterval(interval);
+    }, [step, timeLeft]);
+
+    const handleEmailSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setErrorMessage("");
+        setSuccessMessage("");
+
+        try {
+            const response = await userService.sendOtpRegister(email);
+            if (response && response.success) {
+                setStep(2);
+                setTimeLeft(90);
+                setCanResend(false);
+            } else {
+                if (response.code === "E001") {
+                    setErrorMessage("Invalid Email format or Email already exists.");
+                } else {
+                    setErrorMessage(response.message || "Failed to send OTP.");
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            setErrorMessage("An error occurred. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleSubmit = async (e) => {
+    const handleOtpSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setErrorMessage("");
+        setSuccessMessage("");
+
+        try {
+            const response = await userService.verifyOtpRegister(email, otp);
+            if (response && response.success) {
+                setStep(3);
+            } else {
+                setErrorMessage(response.message || "Invalid OTP.");
+            }
+        } catch (err) {
+            console.error(err);
+            setErrorMessage("Failed to verify OTP.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleRegisterSubmit = async (e) => {
         e.preventDefault();
 
-        if (form.password !== form.confirmPassword) {
-            alert("Mật khẩu không khớp!");
+        if (form.password !== form.rePassword) {
+            setErrorMessage("Passwords do not match!");
             return;
         }
 
         setIsLoading(true);
+        setErrorMessage("");
+        setSuccessMessage("");
 
         try {
-            const formData = new FormData();
             const userData = {
-                name: form.name,
-                username: form.username,
-                password: form.password,
-                email: form.email,
-                roles: ["USER"]
+                ...form,
+                email: email
             };
 
-            formData.append(
-                "user",
-                new Blob([JSON.stringify(userData)], { type: "application/json" })
-            );
-            // No image used
+            const response = await userService.register(userData);
 
-            await axios.post("http://localhost:8080/api/v1/user", formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            });
+            if (response && response.success) {
+                setSuccessMessage("Registration successful! Logging in...");
 
-            alert("Đăng ký thành công! Vui lòng đăng nhập.");
-            navigate("/login");
+                // Auto Login
+                try {
+                    const loginRes = await axios.post(
+                        "http://localhost:8080/api/v1/auth",
+                        { email: email, password: form.password },
+                        {
+                            headers: { "Content-Type": "application/json" },
+                            withCredentials: true,
+                        }
+                    );
+
+                    const { token, refreshToken, role, idUser, email: resEmail } = loginRes.data;
+
+                    login({
+                        token,
+                        refreshToken,
+                        role: role,
+                        idUser,
+                        email: resEmail || email
+                    });
+
+                    // Redirect based on role or to home
+                    setTimeout(() => {
+                        if (role && role.includes("ADMIN")) {
+                            navigate("/admin");
+                        } else {
+                            navigate("/user");
+                        }
+                    }, 1000);
+
+                } catch (loginErr) {
+                    console.error("Auto login failed", loginErr);
+                    setSuccessMessage("Registration successful! Please login manually.");
+                    setTimeout(() => navigate("/login"), 2000);
+                }
+
+            } else {
+                setErrorMessage(response.message || "Registration failed.");
+            }
+
         } catch (err) {
             console.error(err);
-            alert("Đăng ký thất bại! Vui lòng kiểm tra lại username hoặc email.");
+            setErrorMessage("Registration failed due to server error.");
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleResendOtp = async () => {
+        if (!canResend) return;
+        setIsLoading(true);
+        setErrorMessage("");
+        setSuccessMessage("");
+        try {
+            const response = await userService.sendOtpRegister(email);
+            if (response && response.success) {
+                setTimeLeft(90);
+                setCanResend(false);
+                setSuccessMessage("OTP Resent!");
+                setTimeout(() => setSuccessMessage(""), 3000);
+            } else {
+                setErrorMessage(response.message || "Failed to resend OTP.");
+            }
+        } catch (err) {
+            setErrorMessage("Failed to resend OTP.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleChange = (e) => {
+        setForm({ ...form, [e.target.name]: e.target.value });
     };
 
     return (
@@ -77,84 +206,136 @@ function Register() {
                 {/* Right Side */}
                 <div className="login-section">
                     <div className="login-card">
-                        <h2 className="login-title">Sign up for BQMUSIC</h2>
+                        <h2 className="login-title">
+                            {step === 1 && "Create Account"}
+                            {step === 2 && "Enter OTP"}
+                            {step === 3 && "Finalize Account"}
+                        </h2>
 
-                        <form onSubmit={handleSubmit} className="login-form">
-                            {/* Ẩn Name & Email nếu User không muốn thấy, nhưng backend cần. 
-                    Tuy nhiên, tôi sẽ giữ lại theo best practice để tránh lỗi backend.
-                    User yêu cầu "input tạo tài khoản: tên tài khoản, mật khẩu, nhập lại mật khẩu",
-                    nhưng nếu bỏ Email/Name sẽ lỗi. Tôi sẽ giữ lại nhưng để ở trên, 
-                    hoặc nếu user cực đoan tôi sẽ fake data.
-                    Tạm thời tôi giữ lại Name và Email vì tính an toàn.
-                 */}
-                            <div className="form-group">
-                                <input
-                                    type="text"
-                                    name="name"
-                                    className="form-input"
-                                    placeholder="Full Name"
-                                    value={form.name}
-                                    onChange={handleChange}
-                                    required
-                                />
+                        {errorMessage && (
+                            <div className="alert-message alert-error">
+                                {errorMessage}
                             </div>
+                        )}
 
-                            <div className="form-group">
-                                <input
-                                    type="text"
-                                    name="username"
-                                    className="form-input"
-                                    placeholder="Tên tài khoản (Username)"
-                                    value={form.username}
-                                    onChange={handleChange}
-                                    required
-                                />
+                        {successMessage && (
+                            <div className="alert-message alert-success">
+                                {successMessage}
                             </div>
+                        )}
 
-                            <div className="form-group">
-                                <input
-                                    type="email"
-                                    name="email"
-                                    className="form-input"
-                                    placeholder="Email"
-                                    value={form.email}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
+                        {/* Step 1: Email Input */}
+                        {step === 1 && (
+                            <form onSubmit={handleEmailSubmit} className="login-form">
+                                <div className="form-group">
+                                    <input
+                                        type="email"
+                                        className="form-input"
+                                        placeholder="Email Address"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                                <button type="submit" className="login-button" disabled={isLoading}>
+                                    {isLoading ? 'Sending OTP...' : 'Next'}
+                                </button>
+                            </form>
+                        )}
 
-                            <div className="form-group">
-                                <input
-                                    type="password"
-                                    name="password"
-                                    className="form-input"
-                                    placeholder="Mật khẩu"
-                                    value={form.password}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
+                        {/* Step 2: OTP Verification */}
+                        {step === 2 && (
+                            <form onSubmit={handleOtpSubmit} className="login-form">
+                                <div className="alert-message alert-success" style={{ marginBottom: '15px' }}>
+                                    <div>OTP sent to <strong>{email}</strong></div>
+                                </div>
 
-                            <div className="form-group">
-                                <input
-                                    type="password"
-                                    name="confirmPassword"
-                                    className="form-input"
-                                    placeholder="Nhập lại mật khẩu"
-                                    value={form.confirmPassword}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
+                                <div className="form-group">
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        placeholder="Enter OTP"
+                                        value={otp}
+                                        onChange={(e) => setOtp(e.target.value)}
+                                        required
+                                        style={{ textAlign: 'center', letterSpacing: '4px', fontWeight: 'bold' }}
+                                    />
+                                </div>
 
-                            <button
-                                type="submit"
-                                className="login-button"
-                                disabled={isLoading}
-                            >
-                                {isLoading ? 'Đang tạo...' : 'Đăng ký'}
-                            </button>
-                        </form>
+                                <div style={{ textAlign: 'center', margin: '10px 0', fontSize: '14px', color: '#8e8e8e' }}>
+                                    {timeLeft > 0 ? (
+                                        <span>Resend OTP in {timeLeft}s</span>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={handleResendOtp}
+                                            style={{ border: 'none', background: 'none', color: '#0095f6', fontWeight: 'bold', cursor: 'pointer' }}
+                                        >
+                                            Resend OTP
+                                        </button>
+                                    )}
+                                </div>
+
+                                <button type="submit" className="login-button" disabled={isLoading}>
+                                    {isLoading ? 'Verifying...' : 'Verify'}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => { setStep(1); setOtp(""); setErrorMessage(""); }}
+                                    style={{ border: 'none', background: 'none', color: '#8e8e8e', marginTop: '10px', cursor: 'pointer', fontSize: '13px' }}
+                                >
+                                    Change Email
+                                </button>
+                            </form>
+                        )}
+
+                        {/* Step 3: User Details */}
+                        {step === 3 && (
+                            <form onSubmit={handleRegisterSubmit} className="login-form">
+                                <div className="form-group">
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        className="form-input"
+                                        placeholder="Full Name"
+                                        value={form.name}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+
+
+
+                                <div className="form-group">
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        className="form-input"
+                                        placeholder="Password"
+                                        value={form.password}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <input
+                                        type="password"
+                                        name="rePassword"
+                                        className="form-input"
+                                        placeholder="Confirm Password"
+                                        value={form.rePassword}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+
+                                <button type="submit" className="login-button" disabled={isLoading}>
+                                    {isLoading ? 'Creating Account...' : 'Sign Up'}
+                                </button>
+                            </form>
+                        )}
 
                         <div className="signup-box" style={{ marginTop: '20px', textAlign: 'center', fontSize: '14px' }}>
                             Have an account? <button onClick={() => navigate("/login")} style={{ border: 'none', background: 'none', color: '#0095f6', fontWeight: 'bold', cursor: 'pointer' }}>Log in</button>

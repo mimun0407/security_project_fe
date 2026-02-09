@@ -36,21 +36,20 @@ function NewFeed() {
   // --- 1. Fetch User Info (User đang đăng nhập) ---
   const fetchCurrentUser = useCallback(async () => {
     try {
-      // LƯU Ý: Bạn cần đảm bảo lúc Login đã lưu 'username' vào localStorage
-      const storedUsername = localStorage.getItem('username');
+      const storedEmail = localStorage.getItem('email');
 
-      if (!storedUsername) {
-        console.warn("Không tìm thấy username trong localStorage. Chưa login?");
+      if (!storedEmail) {
+        console.warn("Không tìm thấy email trong localStorage. Chưa login?");
         return;
       }
 
-      // Gọi API: GET /api/v1/user/{username}
-      const response = await axiosClient.get(`/user/${storedUsername}`);
+      // Gọi API: GET /api/v1/user/{email}
+      const response = await axiosClient.get(`/user/${storedEmail}`);
       const data = response.data;
 
       setCurrentUser({
         name: data.name || "Người dùng",
-        username: data.username,
+        username: data.email, // Map email to username for compatibility
         avatar: data.imageUrl ? `${IMAGE_BASE_URL}${data.imageUrl}` : DEFAULT_AVATAR_URL
       });
 
