@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getErrorMessage } from "../../utils/errorUtils";
 import { useNavigate } from "react-router-dom";
 import '../auth/css/Login.css';
 import userService from "../../services/userService";
@@ -27,7 +28,7 @@ function ForgotPassword() {
             }
         } catch (err) {
             console.error(err);
-            setErrorMessage("Failed to send OTP. Please check your email or try again later.");
+            setErrorMessage(getErrorMessage(err));
         } finally {
             setIsLoading(false);
         }
@@ -49,7 +50,7 @@ function ForgotPassword() {
             }
         } catch (err) {
             console.error(err);
-            setErrorMessage("Failed to verify OTP. Please try again later.");
+            setErrorMessage(getErrorMessage(err));
         } finally {
             setIsLoading(false);
         }

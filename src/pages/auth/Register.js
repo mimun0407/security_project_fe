@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getErrorMessage } from "../../utils/errorUtils";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import BQMusicLogo from "../../components/common/BQMusicLogo";
@@ -58,15 +59,11 @@ function Register() {
                 setTimeLeft(90);
                 setCanResend(false);
             } else {
-                if (response.code === "E001") {
-                    setErrorMessage("Invalid Email format or Email already exists.");
-                } else {
-                    setErrorMessage(response.message || "Failed to send OTP.");
-                }
+                setErrorMessage(getErrorMessage({ response }, response.message || "Failed to send OTP."));
             }
         } catch (err) {
             console.error(err);
-            setErrorMessage("An error occurred. Please try again.");
+            setErrorMessage(getErrorMessage(err));
         } finally {
             setIsLoading(false);
         }
@@ -83,11 +80,11 @@ function Register() {
             if (response && response.success) {
                 setStep(3);
             } else {
-                setErrorMessage(response.message || "Invalid OTP.");
+                setErrorMessage(getErrorMessage({ response }, response.message || "Invalid OTP."));
             }
         } catch (err) {
             console.error(err);
-            setErrorMessage("Failed to verify OTP.");
+            setErrorMessage(getErrorMessage(err));
         } finally {
             setIsLoading(false);
         }
@@ -153,12 +150,12 @@ function Register() {
                 }
 
             } else {
-                setErrorMessage(response.message || "Registration failed.");
+                setErrorMessage(getErrorMessage({ response }, response.message || "Registration failed."));
             }
 
         } catch (err) {
             console.error(err);
-            setErrorMessage("Registration failed due to server error.");
+            setErrorMessage(getErrorMessage(err));
         } finally {
             setIsLoading(false);
         }
@@ -177,10 +174,10 @@ function Register() {
                 setSuccessMessage("OTP Resent!");
                 setTimeout(() => setSuccessMessage(""), 3000);
             } else {
-                setErrorMessage(response.message || "Failed to resend OTP.");
+                setErrorMessage(getErrorMessage({ response }, response.message || "Failed to resend OTP."));
             }
         } catch (err) {
-            setErrorMessage("Failed to resend OTP.");
+            setErrorMessage(getErrorMessage(err));
         } finally {
             setIsLoading(false);
         }
