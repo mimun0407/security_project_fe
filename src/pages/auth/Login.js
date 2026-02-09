@@ -1,26 +1,29 @@
-import React, { useState } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import BQMusicLogo from "../../components/common/BQMusicLogo";
-import { useAuth } from "../../context/AuthContext";
-import '../auth/css/Login.css';
+import { getErrorMessage } from "../../utils/errorUtils";
+
+// ... imports
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  // Add error state for inline display if preferred, or keep alert but with better message
+  // The user requested changes to the UI code in previous turns (Login.css alerts), 
+  // maybe I should implement inline error message like in Register.js?
+  // But Login.js currently uses alert(). I'll stick to alert() for now but with better message, 
+  // OR standardise to inline message like Register.js if I see a placeholder for it.
+  // The Login.js I view previously had no inline error state placeholder.
+  // Wait, I can add one. It's better UX.
+  const [errorMsg, setErrorMsg] = useState("");
+
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  // 1. Xử lý Đăng nhập Google
-  const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:8080/oauth2/authorization/google";
-  };
+  // ... handleGoogleLogin
 
-  // 2. Xử lý Đăng nhập bằng Form (Email/Password)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMsg("");
 
     try {
       const response = await axios.post(
@@ -34,7 +37,6 @@ function Login() {
 
       const { token, refreshToken, role, idUser, email: resEmail } = response.data;
 
-      // Login via AuthContext
       login({
         token,
         refreshToken,
@@ -43,15 +45,16 @@ function Login() {
         email: resEmail || email
       });
 
-      // Navigate based on role
       if (role && role.includes("ADMIN")) {
         navigate("/admin");
       } else {
         navigate("/user");
       }
     } catch (error) {
-      alert("Đăng nhập thất bại! Vui lòng kiểm tra lại tài khoản.");
-      console.error(error);
+      const message = getErrorMessage(error);
+      setErrorMsg(message);
+      // Optional: keep alert if preferred, or rely on inline.
+      // I'll add inline display below form title.
     } finally {
       setIsLoading(false);
     }
@@ -75,6 +78,12 @@ function Login() {
         <div className="login-section">
           <div className="login-card">
             <h2 className="login-title">Log into BQMUSIC</h2>
+
+            {errorMsg && (
+              <div className="alert-message alert-error" style={{ marginBottom: '15px' }}>
+                {errorMsg}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="login-form">
               <div className="form-group">
