@@ -12,26 +12,18 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const initializeAuth = async () => {
             const token = localStorage.getItem("token");
-            const username = localStorage.getItem("username");
             const email = localStorage.getItem("email");
             const roles = localStorage.getItem("roles");
+            const idUser = localStorage.getItem("idUser");
 
-            if (token && (username || email)) {
+            if (token && email) {
                 setIsAuthenticated(true);
-                // We can optionally fetch fresh user data here if needed
-                // For now, restore basic info from what we stored (if any)
-                // Or better: Just explicitly fetch user profile if we have a username
-                if (username) {
-                    try {
-                        const res = await axiosClient.get(`/user/${username}`);
-                        setUser(res.data);
-                    } catch (error) {
-                        console.warn("Failed to fetch user profile on init", error);
-                        // If token invalid, maybe logout? For now, keep it simple.
-                    }
-                } else {
-                    setUser({ username, email, roles: roles ? JSON.parse(roles) : [] });
-                }
+                // We could fetch profile by idUser or email if needed. For now restore from localStorage.
+                setUser({
+                    email,
+                    idUser,
+                    roles: roles ? JSON.parse(roles) : []
+                });
             }
             setIsLoading(false);
         };
@@ -40,17 +32,17 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = (data) => {
-        // data: { token, refreshToken, roles, username, email, ... }
+        // data: { token, refreshToken, role, idUser, email }
         localStorage.setItem("token", data.token);
         localStorage.setItem("refreshToken", data.refreshToken);
-        localStorage.setItem("roles", JSON.stringify(data.role)); // Note: key is 'role' from backend?
-        localStorage.setItem("username", data.username);
-        if (data.email) localStorage.setItem("email", data.email);
+        localStorage.setItem("roles", JSON.stringify(data.role)); // Backend returns "role" (array), we store as "roles"
+        localStorage.setItem("idUser", data.idUser);
+        localStorage.setItem("email", data.email);
 
         setIsAuthenticated(true);
         setUser({
-            username: data.username,
             email: data.email,
+            idUser: data.idUser,
             roles: data.role
         });
     };

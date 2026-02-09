@@ -2,14 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Header from "../../components/layout/Header";
-import Footer from "../../components/layout/Footer";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./css/Block.css"; // Reuse modern styles
 
 function CreateUser() {
   const [form, setForm] = useState({
     name: "",
-    username: "",
     password: "",
     email: "",
     roles: []
@@ -49,7 +48,6 @@ function CreateUser() {
       const formData = new FormData();
       const userData = {
         name: form.name,
-        username: form.username,
         password: form.password,
         email: form.email,
         roles: form.roles // Mặc định role USER nếu rỗng? Tùy backend. Code cũ cho phép rỗng.
@@ -137,22 +135,7 @@ function CreateUser() {
                 <h5 className="fw-bold mb-4">Account Details</h5>
 
                 <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Username</label>
-                    <div className="input-icon-wrapper">
-                      <i className="bi bi-at input-icon"></i>
-                      <input
-                        type="text"
-                        name="username"
-                        className="form-control-modern with-icon"
-                        placeholder="johndoe123"
-                        value={form.username}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-12 mb-3">
                     <label className="form-label">Email Address</label>
                     <div className="input-icon-wrapper">
                       <i className="bi bi-envelope input-icon"></i>

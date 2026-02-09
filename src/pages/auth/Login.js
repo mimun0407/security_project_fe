@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import '../auth/css/Login.css';
 
 function Login() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ function Login() {
     window.location.href = "http://localhost:8080/oauth2/authorization/google";
   };
 
-  // 2. Xử lý Đăng nhập bằng Form (Username/Password)
+  // 2. Xử lý Đăng nhập bằng Form (Email/Password)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -25,22 +25,22 @@ function Login() {
     try {
       const response = await axios.post(
         "http://localhost:8080/api/v1/auth",
-        { username, password },
+        { email, password },
         {
           headers: { "Content-Type": "application/json" },
           withCredentials: true,
         }
       );
 
-      const { token, refreshToken, role, email } = response.data;
+      const { token, refreshToken, role, idUser, email: resEmail } = response.data;
 
       // Login via AuthContext
       login({
         token,
         refreshToken,
         role: role,
-        username,
-        email
+        idUser,
+        email: resEmail || email
       });
 
       // Navigate based on role
@@ -79,11 +79,11 @@ function Login() {
             <form onSubmit={handleSubmit} className="login-form">
               <div className="form-group">
                 <input
-                  type="text"
+                  type="email"
                   className="form-input"
-                  placeholder="Username or email"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>

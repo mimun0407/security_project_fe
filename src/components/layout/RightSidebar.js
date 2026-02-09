@@ -15,8 +15,8 @@ const RightSidebar = ({ currentUser, suggestions, onFollow }) => {
                         onError={(e) => { e.target.src = DEFAULT_AVATAR_URL }}
                     />
                     <div>
-                        {/* Hiển thị username (login id) */}
-                        <div className="font-semibold text-sm">{currentUser.username || "Chưa đăng nhập"}</div>
+                        {/* Hiển thị email */}
+                        <div className="font-semibold text-sm">{currentUser.username || currentUser.email || "Chưa đăng nhập"}</div>
                         {/* Hiển thị name (Tên hiển thị) */}
                         <div className="text-gray-500 text-xs">{currentUser.name}</div>
                     </div>
