@@ -3,25 +3,35 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Header from "../../components/layout/Header";
-import Footer from "../../components/layout/Footer";
+// Footer is removed from render as per previous design choice, but keeping import if needed or removing it.
+// import Footer from "../../components/layout/Footer"; 
+import "./css/Profile.css";
 
 function UserMenu() {
-  // 1. Đổi cách lấy tham số: Ưu tiên lấy email
-  const { email: paramEmail } = useParams();
+  // 1. Lấy userId từ URL (param name khớp với AppRoutes: userId)
+  const params = useParams();
+
+  // Clean up userId if it contains "userId=" prefix
+  let userIdFromUrl = params.userId;
+  if (userIdFromUrl && userIdFromUrl.startsWith("userId=")) {
+    userIdFromUrl = userIdFromUrl.replace("userId=", "");
+  }
+
   const navigate = useNavigate();
 
-  // Lấy email từ localStorage
-  const storedEmail = localStorage.getItem("email");
+  // Lấy idUser từ localStorage (dự phòng)
+  const storedIdUser = localStorage.getItem("idUser");
 
-  // Biến định danh chính bây giờ là email
-  const userEmail = paramEmail || storedEmail;
+  // Biến định danh chính bây giờ là userId
+  const targetId = userIdFromUrl || storedIdUser;
 
   const [user, setUser] = useState(null);
+  console.log("user", user);
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
 
-  // edit state & form
+  // ... (state for edit form)
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -32,16 +42,12 @@ function UserMenu() {
     imagePreview: null,
   });
 
-  // ✅ HÀM HELPER XỬ LÝ URL ẢNH
+  // ... (getImageUrl helper)
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-
-    // Nếu là URL đầy đủ (http/https) từ Google thì dùng luôn
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-
-    // Nếu là đường dẫn local thì ghép với localhost
     return `http://localhost:8080${imageUrl}`;
   };
 
@@ -49,20 +55,28 @@ function UserMenu() {
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    if (!token || !userEmail) {
-      console.error("Thiếu token hoặc email, chuyển về login");
+    if (!token || !targetId) {
+      console.error("Thiếu token hoặc userId, chuyển về login");
       navigate("/login");
       return;
     }
 
     const fetchUser = async () => {
       try {
-        const res = await axios.get(`http://localhost:8080/api/v1/user/${userEmail}`, {
+        // Gọi API theo ID
+        console.log("Fetching user profile...");
+        console.log("targetId:", targetId);
+
+        const res = await axios.get(`http://localhost:8080/api/v1/user/userId/${targetId}`, {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
 
-        const data = res.data;
+        // Check if data is wrapped in a 'data' property
+        const responseData = res.data;
+        const data = responseData.data || responseData;
+
+        console.log("User Data:", data);
         setUser(data);
 
         setForm((f) => ({
@@ -70,7 +84,7 @@ function UserMenu() {
           name: data.name || "",
           email: data.email || "",
           isActive: data.isActive ?? true,
-          imagePreview: getImageUrl(data.imageUrl), // ✅ Sử dụng hàm helper
+          imagePreview: getImageUrl(data.imageUrl),
         }));
       } catch (err) {
         console.error("Lỗi khi lấy thông tin user:", err);
@@ -80,7 +94,7 @@ function UserMenu() {
     };
 
     fetchUser();
-  }, [paramEmail, navigate, userEmail]);
+  }, [params.userId, navigate, targetId]);
 
   // --- FETCH POSTS ---
   useEffect(() => {
@@ -90,11 +104,15 @@ function UserMenu() {
 
       setLoadingPosts(true);
       try {
-        const res = await axios.get("http://localhost:8080/api/v1/posts/my", {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        });
-        setPosts(res.data.content || []);
+        // User requested to remove/check this. 
+        // "posts/my" fetches current user's posts, which is wrong for viewing other profiles.
+        // Pending correct endpoint for "get posts by user".
+        // const res = await axios.get("http://localhost:8080/api/v1/posts/my", {
+        //   headers: { Authorization: `Bearer ${token}` },
+        //   withCredentials: true,
+        // });
+        // setPosts(res.data.content || []);
+        setPosts([]); // Set empty for now
       } catch (err) {
         console.error("Lỗi khi lấy danh sách posts:", err);
       } finally {
@@ -128,8 +146,6 @@ function UserMenu() {
     setForm((prev) => ({ ...prev, imageFile: file, imagePreview: previewUrl }));
   };
 
-  const handleEditClick = () => setEditMode(true);
-
   const handleCancel = () => {
     if (user) {
       setForm({
@@ -138,7 +154,7 @@ function UserMenu() {
         password: "",
         isActive: user.isActive ?? true,
         imageFile: null,
-        imagePreview: getImageUrl(user.imageUrl), // ✅ Sử dụng hàm helper
+        imagePreview: getImageUrl(user.imageUrl),
       });
     }
     setEditMode(false);
@@ -190,7 +206,7 @@ function UserMenu() {
         password: "",
         isActive: res.data.isActive ?? true,
         imageFile: null,
-        imagePreview: getImageUrl(res.data.imageUrl), // ✅ Sử dụng hàm helper
+        imagePreview: getImageUrl(res.data.imageUrl),
       });
 
       setEditMode(false);
@@ -202,177 +218,218 @@ function UserMenu() {
     }
   };
 
-  if (loading) return <div className="text-center mt-5">Đang tải...</div>;
-  if (!user) return <div className="text-center mt-5">Không tìm thấy thông tin user</div>;
+  if (loading) return (
+    <div className="soundcloud-profile-container">
+      <Header />
+      <div className="text-center mt-5 pt-5">
+        <div className="spinner-border text-warning" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (!user) return (
+    <div className="soundcloud-profile-container">
+      <Header />
+      <div className="text-center mt-5 pt-5 text-muted">User not found</div>
+    </div>
+  );
 
   return (
-    <>
+    <div className="soundcloud-profile-container">
       <Header />
-      <div className="container mt-5">
-        <div className="row">
-          {/* User Info Card */}
-          <div className="col-md-4">
-            <div className="card p-4 shadow-lg" style={{ borderRadius: "15px" }}>
-              <div className="text-center">
-                <img
-                  src={form.imagePreview || "/placeholder-avatar.png"} // ✅ Đã xử lý qua getImageUrl trong form
-                  alt="User Avatar"
-                  className="rounded-circle shadow-sm mb-3"
-                  style={{ width: "120px", height: "120px", objectFit: "cover" }}
-                />
-                <h4 className="mb-3">{user.name || user.email}</h4>
-              </div>
-
-              {editMode ? (
-                <>
-                  <div className="mb-2">
-                    <label className="form-label">Tên hiển thị</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={form.name}
-                      onChange={(e) => onChangeField("name", e.target.value)}
-                    />
-                  </div>
-
-                  <div className="mb-2">
-                    <label className="form-label">Email</label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      value={form.email}
-                      disabled
-                      onChange={(e) => onChangeField("email", e.target.value)}
-                    />
-                  </div>
-
-                  <div className="mb-2 form-check">
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      id="isActive"
-                      checked={form.isActive}
-                      onChange={(e) => onChangeField("isActive", e.target.checked)}
-                    />
-                    <label className="form-check-label" htmlFor="isActive">
-                      Kích hoạt tài khoản
-                    </label>
-                  </div>
-
-                  <div className="mb-2">
-                    <label className="form-label">Mật khẩu mới</label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      value={form.password}
-                      placeholder="Để trống nếu không đổi"
-                      onChange={(e) => onChangeField("password", e.target.value)}
-                    />
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Ảnh đại diện</label>
-                    <input type="file" accept="image/*" className="form-control" onChange={onSelectImage} />
-                  </div>
-
-                  <div className="d-grid gap-2">
-                    <button className="btn btn-success" onClick={handleSave}>
-                      Lưu
-                    </button>
-                    <button className="btn btn-secondary" onClick={handleCancel}>
-                      Hủy
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p>
-                    <b>👤 Tên:</b> {user.name}
-                  </p>
-                  <p>
-                    <b>📧 Email:</b> {user.email}
-                  </p>
-                  <p>
-                    <b>⚡ Trạng thái:</b> {user.isActive ? "Đang hoạt động" : "Bị khóa"}
-                  </p>
-
-                  <div className="d-grid gap-2">
-                    <button className="btn btn-warning" onClick={handleEditClick}>
-                      Sửa thông tin
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+      {/* --- BANNER HEADER --- */}
+      <div className="profile-header">
+        <div className="profile-header-content">
+          <div className="profile-avatar-container">
+            <img
+              src={getImageUrl(user.imageUrl) || "/placeholder-avatar.png"}
+              alt={user.name}
+              className="profile-avatar-img"
+            />
           </div>
 
-          {/* Posts Section */}
-          <div className="col-md-8">
-            <div className="card shadow-lg p-4" style={{ borderRadius: "15px" }}>
-              <h4 className="mb-4">📝 Bài viết của tôi ({posts.length})</h4>
+          <div className="profile-info">
+            <h2 className="profile-username">{user.name || user.email}</h2>
+            {/* {user.name && <div className="profile-fullname">{user.email}</div>} */}
+            {/* {user.isActive === false && <span className="badge bg-danger ms-2">Inactive</span>} */}
+          </div>
 
-              {loadingPosts ? (
-                <div className="text-center">Đang tải bài viết...</div>
-              ) : posts.length === 0 ? (
-                <div className="text-center text-muted">Chưa có bài viết nào</div>
-              ) : (
-                <div className="row g-3">
-                  {posts.map((post) => (
-                    <div key={post.id} className="col-12">
-                      <div className="card shadow-sm" style={{ borderRadius: "10px" }}>
-                        <div className="card-body">
-                          <div className="d-flex align-items-center mb-3">
-                            <img
-                              src={getImageUrl(post.authorAvatar) || "/placeholder-avatar.png"} // ✅ Sử dụng hàm helper
-                              alt={post.authorName}
-                              className="rounded-circle me-2"
-                              style={{ width: "40px", height: "40px", objectFit: "cover" }}
-                            />
-                            <div>
-                              <strong>{post.authorName}</strong>
-                              <div className="text-muted small">{post.createdAt || "Vừa xong"}</div>
-                            </div>
-                          </div>
+          <div className="header-actions">
+            {!editMode && (
+              <button className="btn-upload-header">
+                <i className="bi bi-camera me-2"></i> Upload Header Image
+              </button>
+            )}
 
-                          {post.content && (
-                            <p className="mb-3">{post.content}</p>
-                          )}
-
-                          {post.imageUrl && (
-                            <img
-                              src={getImageUrl(post.imageUrl)} // ✅ Sử dụng hàm helper
-                              alt="Post"
-                              className="img-fluid rounded mb-3"
-                              style={{ maxHeight: "400px", objectFit: "cover", width: "100%" }}
-                            />
-                          )}
-
-                          {post.musicLink && (
-                            <div className="mb-3">
-                              <audio controls className="w-100">
-                                <source src={`http://localhost:8080${post.musicLink}`} type="audio/mpeg" />
-                                Trình duyệt của bạn không hỗ trợ phát nhạc.
-                              </audio>
-                            </div>
-                          )}
-
-                          <div className="d-flex align-items-center text-muted">
-                            <span className="me-3">
-                              ❤️ {post.likes} lượt thích
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <button className="btn-sc btn-sc-secondary" onClick={() => setEditMode(true)}>
+              <i className="bi bi-pencil"></i> Edit
+            </button>
+            <button className="btn-sc btn-sc-primary">
+              <i className="bi bi-share"></i> Share
+            </button>
           </div>
         </div>
       </div>
-      <Footer />
-    </>
+
+      {/* --- NAVIGATION TABS --- */}
+      <div className="profile-nav">
+        <div className="nav-container">
+          <div className="nav-tabs-sc">
+            <div className="nav-item-sc active">All</div>
+            <div className="nav-item-sc">Popular tracks</div>
+            <div className="nav-item-sc">Tracks</div>
+            <div className="nav-item-sc">Albums</div>
+            <div className="nav-item-sc">Playlists</div>
+            <div className="nav-item-sc">Reposts</div>
+          </div>
+          <div className="nav-actions">
+            <button className="btn-sc btn-sc-secondary">Station</button>
+            <button className="btn-sc btn-sc-secondary">...</button>
+          </div>
+        </div>
+      </div>
+
+      {/* --- MAIN CONTENT --- */}
+      <div className="profile-content">
+        {/* LEFT COLUMN: TRACKS */}
+        <div className="content-left">
+          <h3 className="section-title">Recent</h3>
+
+          {loadingPosts ? (
+            <div className="text-center py-5 text-muted">Loading tracks...</div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-5 text-muted">
+              Hasn't uploaded any sounds yet.
+            </div>
+          ) : (
+            posts.map((post) => (
+              <div key={post.id} className="track-item-card">
+                <div className="track-artwork">
+                  <img
+                    src={getImageUrl(post.imageUrl) || "/placeholder-cover.png"}
+                    alt="Artwork"
+                  />
+                </div>
+                <div className="track-info">
+                  <div className="track-header">
+                    <button className="btn-play-circle">
+                      <i className="bi bi-play-fill" style={{ fontSize: '24px' }}></i>
+                    </button>
+                    <div className="track-meta">
+                      <span className="track-artist">{post.authorName || user.name}</span>
+                      <span className="track-title">{post.content || "Untitled Track"}</span>
+                    </div>
+                    <div className="ms-auto text-muted small">
+                      {post.createdAt || "1 year ago"}
+                    </div>
+                  </div>
+
+                  {/* Fake Waveform */}
+                  <div className="waveform-container" style={{ flex: 1, display: 'flex', alignItems: 'center', opacity: 0.6 }}>
+                    {/* Placeholder visual */}
+                    <div style={{ height: '40px', width: '100%', background: 'url(https://i.imgur.com/8Q5F5kC.png) repeat-x', backgroundSize: 'contain' }}></div>
+                  </div>
+
+                  <div className="track-footer">
+                    <span><i className="bi bi-heart-fill me-1"></i> {post.likes || 0}</span>
+                    <span><i className="bi bi-arrow-repeat me-1"></i> {post.shares || 0}</span>
+                    <span><i className="bi bi-play me-1"></i> {post.views || 0}</span>
+                    <button className="btn-sc btn-sc-secondary ms-auto btn-sm">More</button>
+                  </div>
+
+                  {post.musicLink && (
+                    <div className="mt-2">
+                      <audio controls style={{ height: '30px', width: '100%' }}>
+                        <source src={`http://localhost:8080${post.musicLink}`} type="audio/mpeg" />
+                      </audio>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* RIGHT COLUMN: STATS */}
+        <div className="content-right">
+          <div className="stats-grid">
+            <div className="stat-item">
+              <span className="stat-label">Followers</span>
+              <span className="stat-value">0</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">Following</span>
+              <span className="stat-value">4</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">Tracks</span>
+              <span className="stat-value">{posts.length}</span>
+            </div>
+          </div>
+
+          <div className="sidebar-section mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <span className="text-muted small text-uppercase">Likes</span>
+              <span className="text-muted small cursor-pointer">View all</span>
+            </div>
+            <div className="likes-grid">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="like-item-placeholder"></div>
+              ))}
+            </div>
+          </div>
+
+          <div className="sidebar-section">
+            <div className="text-muted small text-uppercase mb-2">Legal • Privacy • Cookies</div>
+          </div>
+        </div>
+      </div>
+
+      {/* --- EDIT FORM MODAL --- */}
+      {editMode && (
+        <div className="edit-form-overlay">
+          <div className="edit-form-card">
+            <h4 className="mb-4">Edit Profile</h4>
+            <div className="mb-3 text-center">
+              <div className="mb-2">
+                <img src={form.imagePreview || "/placeholder-avatar.png"} alt="Preview" style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover' }} />
+              </div>
+              <label className="btn btn-sm btn-outline-secondary">
+                Upload New Image
+                <input type="file" hidden accept="image/*" onChange={onSelectImage} />
+              </label>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Display Name</label>
+              <input
+                type="text"
+                className="form-control"
+                value={form.name}
+                onChange={(e) => onChangeField("name", e.target.value)}
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Password (Optional)</label>
+              <input
+                type="password"
+                className="form-control"
+                value={form.password}
+                onChange={(e) => onChangeField("password", e.target.value)}
+              />
+            </div>
+
+            <div className="d-flex justify-content-end gap-2">
+              <button className="btn btn-secondary" onClick={handleCancel}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleSave}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

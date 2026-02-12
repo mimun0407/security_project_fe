@@ -1,6 +1,10 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import axios from "axios";
+import BQMusicLogo from "../../components/common/BQMusicLogo";
 import { getErrorMessage } from "../../utils/errorUtils";
-
-// ... imports
+import "./css/Login.css";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -18,7 +22,9 @@ function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  // ... handleGoogleLogin
+  const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:8080/oauth2/authorization/google";
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,7 +54,7 @@ function Login() {
       if (role && role.includes("ADMIN")) {
         navigate("/admin");
       } else {
-        navigate("/user");
+        navigate("/newF");
       }
     } catch (error) {
       const message = getErrorMessage(error);

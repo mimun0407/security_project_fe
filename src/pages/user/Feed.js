@@ -4,6 +4,7 @@ import axiosClient from '../../services/axiosClient';
 import CreatePostModal from '../../components/modals/CreatePostModal';
 import Sidebar from '../../components/layout/Sidebar';
 import RightSidebar from '../../components/layout/RightSidebar';
+import { useAuth } from '../../context/AuthContext';
 
 const IMAGE_BASE_URL = 'http://localhost:8080';
 const DEFAULT_COVER_URL = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=1000&auto=format&fit=crop";
@@ -13,12 +14,24 @@ function NewFeed() {
   const [posts, setPosts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
 
+  const { user } = useAuth(); // Lấy user từ Context
+
   // --- THAY ĐỔI: State lưu thông tin user hiện tại ---
   const [currentUser, setCurrentUser] = useState({
     name: '',
     username: '',
     avatar: DEFAULT_AVATAR_URL
   });
+
+  useEffect(() => {
+    if (user) {
+      setCurrentUser({
+        name: user.name || "Người dùng",
+        username: user.email || "",
+        avatar: user.imageUrl ? `${IMAGE_BASE_URL}${user.imageUrl}` : DEFAULT_AVATAR_URL
+      });
+    }
+  }, [user]);
   // --------------------------------------------------
 
   // State audio
@@ -34,28 +47,9 @@ function NewFeed() {
   const audioRef = useRef(null);
 
   // --- 1. Fetch User Info (User đang đăng nhập) ---
+  // --- 1. Fetch User Info (Đã chuyển sang dùng AuthContext) ---
   const fetchCurrentUser = useCallback(async () => {
-    try {
-      const storedEmail = localStorage.getItem('email');
-
-      if (!storedEmail) {
-        console.warn("Không tìm thấy email trong localStorage. Chưa login?");
-        return;
-      }
-
-      // Gọi API: GET /api/v1/user/{email}
-      const response = await axiosClient.get(`/user/${storedEmail}`);
-      const data = response.data;
-
-      setCurrentUser({
-        name: data.name || "Người dùng",
-        username: data.email, // Map email to username for compatibility
-        avatar: data.imageUrl ? `${IMAGE_BASE_URL}${data.imageUrl}` : DEFAULT_AVATAR_URL
-      });
-
-    } catch (error) {
-      console.error("Lỗi tải thông tin user hiện tại:", error);
-    }
+    // Không cần gọi API nữa vì đã có user từ context
   }, []);
 
   // --- 2. Fetch Posts ---

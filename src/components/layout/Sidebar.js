@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = ({ onOpenCreateModal }) => {
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
     const menuRef = useRef(null);
     const buttonRef = useRef(null);
@@ -59,7 +59,7 @@ const Sidebar = ({ onOpenCreateModal }) => {
                 <NavItem
                     icon={<User className="w-6 h-6" />}
                     label="Trang cá nhân"
-                    onClick={() => handleNavigation('/user')}
+                    onClick={() => handleNavigation(`/user/userId=${user?.idUser || ""}`)}
                 />
             </nav>
 

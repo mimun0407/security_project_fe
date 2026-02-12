@@ -1,0 +1,359 @@
+/* src/pages/user/css/Profile.css */
+
+.soundcloud-profile-container {
+    background-color: #f2f2f2;
+    min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #333;
+    padding-top: 46px;
+    /* Space for fixed header */
+}
+
+/* --- Profile Header (Banner) --- */
+.profile-header {
+    position: relative;
+    height: 260px;
+    background: linear-gradient(135deg, #8A2387, #E94057, #F27121);
+    /* Fallback/Default gradient */
+    background-size: cover;
+    background-position: center;
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.profile-header-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    height: 100%;
+    width: 100%;
+    max-width: 1240px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.profile-avatar-container {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    /* White ring, typical of some designs or just round */
+    overflow: hidden;
+    background-color: #ddd;
+    flex-shrink: 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.profile-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-info {
+    margin-top: 10px;
+    background-color: rgba(0, 0, 0, 0.6);
+    /* Semi-transparent black bg for readability */
+    padding: 8px 12px;
+    color: #fff;
+    display: inline-block;
+}
+
+.profile-username {
+    font-size: 24px;
+    font-weight: 500;
+    margin: 0;
+    line-height: 1.2;
+    /* background-color: #333; */
+    /* Dark box like SC */
+    color: #fff;
+    padding: 4px 8px;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+.profile-fullname {
+    font-size: 16px;
+    color: #ccc;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 2px 6px;
+    display: inline-block;
+}
+
+.header-actions {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-upload-header {
+    background-color: transparent;
+    border: 1px solid #fff;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 3px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-upload-header:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* --- Navigation Tabs --- */
+.profile-nav {
+    background-color: #fff;
+    border-bottom: 1px solid #e5e5e5;
+    padding: 0 20px;
+}
+
+.nav-container {
+    max-width: 1240px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.nav-tabs-sc {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-item-sc {
+    padding: 15px 0;
+    color: #333;
+    font-weight: 500;
+    font-size: 16px;
+    cursor: pointer;
+    position: relative;
+    border-bottom: 3px solid transparent;
+    transition: color 0.2s;
+}
+
+.nav-item-sc:hover {
+    color: #f50;
+    /* SC Orange */
+}
+
+.nav-item-sc.active {
+    color: #f50;
+    border-bottom-color: #f50;
+}
+
+.nav-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-sc {
+    padding: 6px 10px;
+    border-radius: 3px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-sc-secondary {
+    background-color: #fff;
+    border: 1px solid #e5e5e5;
+    color: #333;
+}
+
+.btn-sc-primary {
+    background-color: #f50;
+    border: 1px solid #f50;
+    color: #fff;
+}
+
+/* --- Content Layout --- */
+.profile-content {
+    max-width: 1240px;
+    margin: 20px auto;
+    display: flex;
+    gap: 30px;
+    padding: 0 20px;
+}
+
+.content-left {
+    flex: 1;
+    /* Main content takes ample space */
+}
+
+.content-right {
+    width: 300px;
+    /* Fixed sidebar width */
+    flex-shrink: 0;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #f2f2f2;
+    padding-bottom: 8px;
+}
+
+/* --- Stats Counters (Sidebar) --- */
+.stats-grid {
+    display: flex;
+    justify-content: space-between;
+    /* Distribute evenly */
+    margin-bottom: 20px;
+    color: #999;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 400;
+    /* Thin look */
+    color: #999;
+}
+
+.stat-label {
+    margin-top: -4px;
+}
+
+.stat-item:hover .stat-value,
+.stat-item:hover .stat-label {
+    color: #333;
+}
+
+/* --- Likes Grid --- */
+.likes-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    /* 4 items per row */
+    gap: 10px;
+}
+
+.like-item-placeholder {
+    width: 100%;
+    aspect-ratio: 1;
+    background-color: #eee;
+    border-radius: 50%;
+    /* Circle like SC users or square for tracks */
+}
+
+/* --- Track List Items --- */
+.track-item-card {
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    background: #fff;
+    margin-bottom: 15px;
+    /* border: 1px solid #e5e5e5; */
+    /* SC is pretty flat */
+}
+
+.track-artwork {
+    width: 160px;
+    height: 160px;
+    background-color: #333;
+    flex-shrink: 0;
+}
+
+.track-artwork img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.track-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.track-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.btn-play-circle {
+    width: 48px;
+    height: 48px;
+    background-color: #f50;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    cursor: pointer;
+    border: none;
+}
+
+.track-meta {
+    display: flex;
+    flex-direction: column;
+}
+
+.track-artist {
+    color: #999;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.track-title {
+    color: #333;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.waveform-placeholder {
+    flex: 1;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M0,10 L5,2 L10,15 L15,5 L20,12 L25,8 L30,18 L35,4 L40,14 L45,6 L50,16 L55,3 L60,13 L65,7 L70,17 L75,1 L80,11 L85,9 L90,19 L95,5 L100,10" stroke="%23999" stroke-width="1" fill="none"/></svg>');
+    background-size: cover;
+    opacity: 0.5;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    height: 60px;
+}
+
+.track-footer {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 12px;
+    color: #666;
+}
+
+/* Edit Form Overlay */
+.edit-form-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.edit-form-card {
+    background: #fff;
+    padding: 30px;
+    width: 500px;
+    border-radius: 4px;
+}

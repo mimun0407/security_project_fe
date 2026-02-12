@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import "../../pages/admin/css/Block.css"; // Styles
+import BQMusicLogo from "../common/BQMusicLogo";
+import "./Header.css"; // Import new SC styles
 
 function Header() {
   const navigate = useNavigate();
@@ -9,19 +10,10 @@ function Header() {
   const { user, logout } = useAuth();
 
   const [showDropdown, setShowDropdown] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const dropdownRef = useRef(null);
 
-  const isLoginPage = location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/forgot-password" || location.pathname === "/";
-
-  // Handle Scroll Effect
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  // Helper to check active route
+  const isActive = (path) => location.pathname === path;
 
   // Handle Outside Click for Dropdown
   useEffect(() => {
@@ -39,100 +31,121 @@ function Header() {
     navigate("/login");
   };
 
+  const isLoginPage =
+    location.pathname === "/login" ||
+    location.pathname === "/register" ||
+    location.pathname === "/forgot-password" ||
+    location.pathname === "/";
+
   if (isLoginPage) return null;
 
   return (
-    <header className={`modern-header ${scrolled ? 'scrolled' : ''}`}>
-      <div className="container-fluid px-4 h-100">
-        <div className="d-flex justify-content-between align-items-center h-100">
+    <header className="sc-header">
+      <div className="sc-header-container">
 
-          {/* Left: Brand & Mobile Menu */}
-          <div className="d-flex align-items-center gap-3">
-            <button className="mobile-toggle me-2">
-              <i className="bi bi-list"></i>
-            </button>
-            <div className="brand-logo" onClick={() => navigate('/admin')}>
-              <div className="bg-primary text-white rounded p-1 me-2 d-flex align-items-center justify-content-center" style={{ width: 32, height: 32 }}>
-                <i className="bi bi-shield-lock-fill" style={{ fontSize: 18 }}></i>
-              </div>
-              <span className="fw-bold">AdminPortal</span>
-            </div>
-
-            {/* Desktop Nav */}
-            <nav className="d-none d-md-flex gap-2 ms-4 border-start ps-4" style={{ borderColor: '#e5e7eb' }}>
-              <div
-                className={`nav-link-modern ${location.pathname.includes('/admin') || location.pathname === '/' ? 'active' : ''}`}
-                onClick={() => navigate('/admin')}
-              >
-                <i className="bi bi-grid me-2"></i>Dashboard
-              </div>
-              <div
-                className={`nav-link-modern ${location.pathname.includes('/history') ? 'active' : ''}`}
-                onClick={() => navigate('/history')}
-              >
-                <i className="bi bi-clock-history me-2"></i>Activity Logs
-              </div>
-              {/* Placeholder for future links */}
-              <div className="nav-link-modern" style={{ opacity: 0.6 }}>
-                <i className="bi bi-gear me-2"></i>Configuration
-              </div>
-            </nav>
+        {/* --- LEFT NAVIGATION --- */}
+        <div className="sc-header-left">
+          {/* Logo */}
+          <div className="sc-logo" onClick={() => navigate("/newF")} style={{ padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <BQMusicLogo />
           </div>
 
-          {/* Right: Actions & User */}
-          <div className="d-flex align-items-center gap-3">
-            {/* Notification Bell */}
-            <button className="header-icon-btn position-relative" title="Notifications">
-              <i className="bi bi-bell" style={{ fontSize: 20 }}></i>
-              <span className="notification-badge"></span>
-            </button>
-
-            {/* Settings Icon */}
-            <button className="header-icon-btn d-none d-sm-flex" title="Settings">
-              <i className="bi bi-gear" style={{ fontSize: 20 }}></i>
-            </button>
-
-            {/* User Dropdown */}
-            <div className="position-relative" ref={dropdownRef}>
-              <div
-                className={`d-flex align-items-center gap-2 cursor-pointer profile-trigger ${showDropdown ? 'active' : ''}`}
-                onClick={() => setShowDropdown(!showDropdown)}
-              >
-                <div className="d-none d-sm-block text-end user-meta">
-                  <div className="user-name-small">{user?.name || "Admin User"}</div>
-                  <div className="user-role-small">{user?.roles?.[0] || "Administrator"}</div>
-                </div>
-                <div className="user-avatar-small">
-                  {user?.name?.charAt(0).toUpperCase() || "A"}
-                </div>
-                <i className="bi bi-chevron-down text-muted small ms-1 d-none d-sm-block"></i>
-              </div>
-
-              {/* Dropdown Menu */}
-              <div className={`dropdown-menu-custom ${showDropdown ? 'show' : ''}`}>
-                <div className="px-3 py-2 border-bottom mb-2 d-sm-none">
-                  <div className="fw-bold">{user?.name || "Admin User"}</div>
-                  <div className="text-muted small">{user?.email || "admin@example.com"}</div>
-                </div>
-
-                <div className="dropdown-item-custom">
-                  <i className="bi bi-person text-muted"></i> My Profile
-                </div>
-                <div className="dropdown-item-custom">
-                  <i className="bi bi-sliders text-muted"></i> Account Settings
-                </div>
-                <div className="dropdown-divider"></div>
-                <div className="dropdown-item-custom">
-                  <i className="bi bi-question-circle text-muted"></i> Help & Support
-                </div>
-                <div className="dropdown-divider"></div>
-                <div className="dropdown-item-custom danger" onClick={handleLogout}>
-                  <i className="bi bi-box-arrow-right"></i> Sign Out
-                </div>
-              </div>
-            </div>
+          <div
+            className={`sc-nav-item ${isActive('/newF') ? 'active' : ''}`}
+            onClick={() => navigate('/newF')}
+          >
+            Home
+          </div>
+          <div
+            className={`sc-nav-item ${isActive('/feed') ? 'active' : ''}`}
+            onClick={() => navigate('/feed')}
+          >
+            Feed
+          </div>
+          <div
+            className={`sc-nav-item ${isActive('/library') ? 'active' : ''}`}
+            onClick={() => navigate('/library')}
+          >
+            Library
           </div>
         </div>
+
+        {/* --- CENTER SEARCH --- */}
+        <div className="sc-header-center">
+          <div className="sc-search-bar">
+            <input
+              type="text"
+              className="sc-search-input"
+              placeholder="Search"
+            />
+            <button className="sc-search-icon">
+              <i className="bi bi-search"></i>
+            </button>
+          </div>
+        </div>
+
+        {/* --- RIGHT ACTIONS --- */}
+        <div className="sc-header-right">
+          {/* Pro Link */}
+          <div className="sc-right-item sc-link-highlight" onClick={() => navigate('/pro')}>
+            Try Artist Pro
+          </div>
+
+          <div className="sc-right-item" onClick={() => navigate('/upload')}>
+            Upload
+          </div>
+
+          {/* User Dropdown */}
+          <div className="position-relative" ref={dropdownRef}>
+            <div
+              className="sc-user-menu-trigger"
+              onClick={() => setShowDropdown(!showDropdown)}
+            >
+              <img
+                src={user?.imageUrl ? `http://localhost:8080${user.imageUrl}` : "/placeholder-avatar.png"}
+                alt="User"
+                className="sc-user-avatar"
+                onError={(e) => e.target.src = "/placeholder-avatar.png"}
+              />
+              <div className="d-none d-lg-block text-white small">
+                {user?.name || "User"}
+              </div>
+              <i className="bi bi-chevron-down text-white small"></i>
+            </div>
+
+            <div className={`sc-dropdown ${showDropdown ? 'show' : ''}`}>
+              <div className="sc-dropdown-item" onClick={() => navigate(`/user/userId=${user?.idUser}`)}>
+                <i className="bi bi-person"></i> Profile
+              </div>
+              <div className="sc-dropdown-item" onClick={() => navigate('/likes')}>
+                <i className="bi bi-heart"></i> Likes
+              </div>
+              <div className="sc-dropdown-item" onClick={() => navigate('/stations')}>
+                <i className="bi bi-music-player"></i> Stations
+              </div>
+              <div className="sc-dropdown-divider"></div>
+              <div className="sc-dropdown-item" onClick={() => navigate('/settings')}>
+                <i className="bi bi-gear"></i> Settings
+              </div>
+              <div className="sc-dropdown-item text-danger" onClick={handleLogout}>
+                <i className="bi bi-box-arrow-right"></i> Sign out
+              </div>
+            </div>
+          </div>
+
+          {/* Icons */}
+          <div className="sc-icon-btn">
+            <i className="bi bi-bell"></i>
+          </div>
+          <div className="sc-icon-btn">
+            <i className="bi bi-envelope"></i>
+          </div>
+          <div className="sc-icon-btn">
+            <i className="bi bi-three-dots"></i>
+          </div>
+
+        </div>
+
       </div>
     </header>
   );

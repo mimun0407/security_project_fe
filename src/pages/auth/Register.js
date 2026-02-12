@@ -139,7 +139,7 @@ function Register() {
                         if (role && role.includes("ADMIN")) {
                             navigate("/admin");
                         } else {
-                            navigate("/user");
+                            navigate("/newF");
                         }
                     }, 1000);
 

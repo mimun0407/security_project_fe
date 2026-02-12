@@ -54,15 +54,9 @@ const userService = {
      * @returns {Promise<Object>} Response data
      */
     register: async (userData) => {
-        // API endpoint: /user
-        // userData should match: { "name":..., "password":..., "rePassword":..., "email":... }
-        // Note: The previous implementation used FormData and a specific structure. 
-        // The user request shows a simple JSON object input:
-        // { "name":..., "password":..., "rePassword":..., "email":... }
-        // I will follow the user's input sample, but if backend requires FormData/Blob mix, I might need to adjust.
-        // Given "phase 1" description, it sends JSON. Let's try sending JSON first as axiosClient is configured for JSON.
-
-        const response = await axiosClient.post("/user", userData);
+        // API endpoint: /user/register
+        // Payload: { "name": "...", "password": "...", "rePassword": "...", "email": "..." }
+        const response = await axiosClient.post("/user/register", userData);
         return response.data;
     },
 
