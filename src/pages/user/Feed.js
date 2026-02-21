@@ -5,6 +5,7 @@ import CreatePostModal from '../../components/modals/CreatePostModal';
 import Sidebar from '../../components/layout/Sidebar';
 import RightSidebar from '../../components/layout/RightSidebar';
 import { useAuth } from '../../context/AuthContext';
+import './css/Feed.css';
 
 const IMAGE_BASE_URL = 'http://localhost:8080';
 const DEFAULT_COVER_URL = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=1000&auto=format&fit=crop";
@@ -142,7 +143,7 @@ function NewFeed() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-white">
+    <div className="flex min-h-screen feed-container">
       <CreatePostModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onPostCreated={fetchPosts} />
       <audio ref={audioRef} onEnded={handleAudioEnded} onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)} onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)} className="hidden" />
 
@@ -150,16 +151,16 @@ function NewFeed() {
       <Sidebar onOpenCreateModal={() => setIsCreateModalOpen(true)} />
 
       {/* Main Content */}
-      <main className="flex-1 ml-[245px] mr-[320px]">
+      <main className="flex-1 ml-[80px] mr-[320px] transition-all duration-300">
         <div className="max-w-[630px] mx-auto px-4 py-8">
           {/* Stories */}
-          <div className="bg-white border border-gray-300 rounded-lg p-4 mb-6">
+          <div className="stories-container">
             <div className="flex gap-4 overflow-x-auto stories">
               <style>{`.stories::-webkit-scrollbar { display: none; }`}</style>
               {stories.map(story => (
-                <div key={story.id} className="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0 w-[66px]">
-                  <div className={`p-[2px] rounded-full ${story.isOwn ? 'bg-gray-300' : 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600'}`}>
-                    <div className="bg-white p-[2px] rounded-full"><img src={story.avatar} alt={story.username} className="w-[56px] h-[56px] rounded-full object-cover" /></div>
+                <div key={story.id} className="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0 w-[66px] story-item">
+                  <div className={`p-[2px] rounded-full ${story.isOwn ? 'bg-secondary-theme' : 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600'}`}>
+                    <div className="story-ring"><img src={story.avatar} alt={story.username} className="story-avatar" /></div>
                   </div>
                   <span className="text-xs truncate w-full text-center">{story.username}</span>
                 </div>
@@ -170,11 +171,11 @@ function NewFeed() {
           <div className="space-y-4">
             {posts.length === 0 ? (<div className="text-center text-gray-500 py-10">Đang tải bài viết...</div>) : (
               posts.map(post => (
-                <article key={post.id} className="bg-white border border-gray-300 rounded-lg overflow-hidden">
-                  <div className="flex items-center justify-between p-3">
+                <article key={post.id} className="post-article">
+                  <div className="post-header">
                     <div className="flex items-center gap-3">
                       <img src={post.userAvatar} alt={post.username} className="w-8 h-8 rounded-full object-cover" onError={(e) => { e.target.src = 'https://i.pravatar.cc/150' }} />
-                      <div className="flex flex-col"><span className="font-semibold text-sm">{post.username}</span>{post.musicLink && (<div className="flex items-center text-xs text-gray-500"><Music className="w-3 h-3 mr-1" /> Original Audio</div>)}</div>
+                      <div className="flex flex-col"><span className="username">{post.username}</span>{post.musicLink && (<div className="flex items-center music-info"><Music className="w-3 h-3 mr-1" /> Original Audio</div>)}</div>
                     </div>
                     <button className="text-gray-600 hover:text-gray-800"><MoreHorizontalIcon /></button>
                   </div>
@@ -198,7 +199,7 @@ function NewFeed() {
                       </div>
                     )}
                   </div>
-                  <div className="p-3">
+                  <div className="post-footer">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-4">
                         <Heart className={`w-6 h-6 cursor-pointer hover:scale-110 transition-transform ${post.isLiked ? 'fill-red-500 text-red-500' : ''}`} onClick={() => toggleLike(post.id)} />
@@ -207,9 +208,9 @@ function NewFeed() {
                       </div>
                       <svg className="w-6 h-6 cursor-pointer hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                     </div>
-                    <div className="font-semibold text-sm mb-2">{post.likes.toLocaleString()} lượt thích</div>
-                    <div className="text-sm"><span className="font-semibold mr-2">{post.username}</span> {post.caption}</div>
-                    <div className="mt-3 flex items-center gap-2"><input type="text" placeholder="Thêm bình luận..." className="flex-1 outline-none text-sm" /></div>
+                    <div className="likes-count">{post.likes.toLocaleString()} lượt thích</div>
+                    <div className="caption"><span className="username">{post.username}</span> {post.caption}</div>
+                    <div className="mt-3 flex items-center gap-2"><input type="text" placeholder="Thêm bình luận..." className="comment-input" /></div>
                   </div>
                 </article>
               ))

@@ -1,0 +1,216 @@
+/* src/components/layout/Sidebar.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root {
+    --sidebar-width-collapsed: 72px;
+    --sidebar-width-expanded: 245px;
+    --sidebar-bg: #000000;
+    --sidebar-hover-bg: #1a1a1a;
+    --sidebar-text: #ffffff;
+    --sidebar-text-muted: #a8a8a8;
+    --sidebar-border: #262626;
+    --menu-bg: #262626;
+    --menu-item-hover: #363636;
+}
+
+[data-theme='light'] {
+    --sidebar-bg: #ffffff;
+    --sidebar-hover-bg: #f2f2f2;
+    --sidebar-text: #000000;
+    --sidebar-text-muted: #737373;
+    --sidebar-border: #dbdbdb;
+    --menu-bg: #ffffff;
+    --menu-item-hover: #f2f2f2;
+}
+
+.ig-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--sidebar-width-collapsed);
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 20px 12px;
+    z-index: 1000;
+    transition: width 0.3s cubic-bezier(0.2, 0, 0, 1);
+    color: var(--sidebar-text);
+    overflow: hidden;
+    /* Hide overflow content during transition */
+    font-family: 'Inter', sans-serif;
+}
+
+/* Hover State: Expand */
+.ig-sidebar:hover {
+    width: var(--sidebar-width-expanded);
+}
+
+/* Logo Section */
+.ig-logo-container {
+    height: 92px;
+    /* Standard height or adjusted */
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    margin-bottom: 20px;
+    cursor: pointer;
+    margin-top: 12px;
+}
+
+.ig-logo-icon {
+    min-width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Text is hidden by default, visible on hover */
+.ig-logo-text {
+    margin-left: 16px;
+    font-size: 24px;
+    font-family: 'Billabong', cursive;
+    /* Instagram-like font if avail, else fallback */
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    white-space: nowrap;
+    display: none;
+    /* Hide fully to prevent layout issues in collapsed state */
+}
+
+/* Show text on hover */
+.ig-sidebar:hover .ig-logo-text {
+    display: block;
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.1s;
+    /* Slight delay */
+}
+
+/* Navigation Items */
+.ig-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.ig-nav-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    text-decoration: none;
+    color: inherit;
+    height: 48px;
+    /* Fixed height for consistency */
+}
+
+.ig-nav-item:hover {
+    background-color: var(--sidebar-hover-bg);
+}
+
+.ig-nav-item:active {
+    opacity: 0.7;
+}
+
+.ig-icon-wrapper {
+    min-width: 24px;
+    /* Fix icon width */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.ig-nav-item:hover .ig-icon-wrapper {
+    transform: scale(1.05);
+}
+
+/* Nav Label Transition */
+.ig-nav-label {
+    margin-left: 16px;
+    font-size: 16px;
+    font-weight: 400;
+    opacity: 0;
+    white-space: nowrap;
+    transition: opacity 0.2s ease;
+    display: none;
+}
+
+.ig-sidebar:hover .ig-nav-label {
+    display: block;
+    opacity: 1;
+    transition-delay: 0.1s;
+}
+
+/* Active State */
+.ig-nav-item.active {
+    font-weight: 700;
+}
+
+.ig-nav-item.active .ig-icon-wrapper svg {
+    stroke-width: 3px;
+    /* Make icon thicker for active state (simulated filled) */
+}
+
+/* Bottom Actions (More, Menu) */
+.ig-bottom-actions {
+    margin-top: auto;
+}
+
+/* Dropdown Menu (More) */
+.ig-more-menu {
+    position: absolute;
+    bottom: 80px;
+    left: 12px;
+    width: 222px;
+    background-color: var(--menu-bg);
+    border-radius: 16px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1001;
+    border: 1px solid var(--sidebar-border);
+}
+
+[data-theme='dark'] .ig-more-menu {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.ig-menu-item {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--sidebar-text);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.ig-menu-item:hover {
+    background-color: var(--menu-item-hover);
+}
+
+/* Profile Avatar */
+.ig-profile-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Divider */
+.ig-divider {
+    height: 6px;
+    background-color: #363636;
+    margin: 8px -8px;
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
+}

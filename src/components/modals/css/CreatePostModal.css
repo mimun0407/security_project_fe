@@ -1,0 +1,97 @@
+.modal-overlay {
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem;
+}
+
+.modal-header h2 {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.modal-body {
+    padding: 1rem;
+}
+
+.upload-area {
+    border: 2px dashed var(--border-color);
+    background-color: var(--bg-secondary);
+    transition: all 0.2s ease;
+}
+
+.upload-area:hover {
+    border-color: var(--accent-color);
+    background-color: var(--bg-primary);
+}
+
+.upload-area.active {
+    border-color: var(--accent-color);
+    background-color: rgba(0, 149, 246, 0.05);
+}
+
+.caption-textarea {
+    background-color: var(--input-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem;
+    width: 100%;
+    resize: none;
+}
+
+.caption-textarea:focus {
+    border-color: var(--accent-color);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.visibility-select {
+    background-color: var(--input-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.btn-primary {
+    background-color: var(--text-primary);
+    color: var(--bg-primary);
+    font-weight: 600;
+    padding: 0.5rem 1.5rem;
+    border-radius: 9999px;
+    transition: opacity 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+    opacity: 0.8;
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+[data-theme='dark'] .btn-primary {
+    background-color: #ffffff;
+    color: #000000;
+}

@@ -1,19 +1,21 @@
 import { useState, useRef } from 'react';
 import { X, Image as ImageIcon, Music, Loader2, UploadCloud } from 'lucide-react';
 import axiosClient from '../../services/axiosClient';
+import { useAuth } from '../../context/AuthContext';
+import './css/CreatePostModal.css';
 
 const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
+  const { user } = useAuth();
   const [content, setContent] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [selectedMusic, setSelectedMusic] = useState(null);
+  const [visibility, setVisibility] = useState('PUBLIC');
   const [isLoading, setIsLoading] = useState(false);
 
   // Refs cho input file
   const imageInputRef = useRef(null);
   const musicInputRef = useRef(null);
-
-  const USER_ID = "c8a0b439-42a1-43de-973b-79ab354e4afb";
 
   // Ảnh mặc định nếu không chọn ảnh (Ảnh đĩa than hoặc gradient)
   const DEFAULT_IMAGE_PREVIEW = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=1000&auto=format&fit=crop";
@@ -42,16 +44,30 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
       return;
     }
 
+    if (!user || !user.idUser) {
+      alert("Bạn chưa đăng nhập hoặc không tìm thấy ID người dùng.");
+      return;
+    }
+
     setIsLoading(true);
     const formData = new FormData();
 
-    formData.append('userId', USER_ID);
-    formData.append('content', content);
+    // Construct DTO (Data Transfer Object)
+    const postDto = {
+      userId: user.idUser,
+      content: content,
+      visibility: visibility,
+      targetType: 'SONG',
+      targetId: null
+    };
 
-    // File nhạc là bắt buộc
+    // Append DTO as JSON Blob (Key: 'post')
+    formData.append('post', new Blob([JSON.stringify(postDto)], { type: "application/json" }));
+
+    // File nhạc bắt buộc
     formData.append('music', selectedMusic);
 
-    // Ảnh là tùy chọn. Nếu có chọn thì gửi, không thì thôi (Backend sẽ dùng default hoặc null)
+    // Ảnh tùy chọn
     if (selectedImage) {
       formData.append('image', selectedImage);
     }
@@ -68,37 +84,39 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
       setSelectedImage(null);
       setPreviewUrl(null);
       setSelectedMusic(null);
+      setVisibility('PUBLIC');
       onPostCreated();
       onClose();
+      alert("Đăng bài thành công! 🎵");
     } catch (error) {
       console.error("Lỗi khi đăng bài:", error);
-      alert("Đăng bài thất bại! Hãy kiểm tra lại kết nối.");
+      const msg = error.response?.data?.message || "Đăng bài thất bại! Hãy kiểm tra lại kết nối.";
+      alert(msg);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      {/* Container chính: Giới hạn chiều cao max-h-[85vh] để không bị tràn màn hình laptop */}
-      <div className="bg-white rounded-xl w-full max-w-lg shadow-2xl flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay p-4 animate-in fade-in duration-200">
+      <div className="rounded-xl w-full max-w-lg flex flex-col max-h-[85vh] modal-content">
 
         {/* 1. Header (Cố định) */}
-        <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
-          <h2 className="text-base font-bold text-gray-800">Tạo bài hát mới</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition">
-            <X className="w-6 h-6 text-gray-500" />
+        <div className="flex items-center justify-between modal-header shrink-0">
+          <h2 className="text-base font-bold">Tạo bài hát mới</h2>
+          <button onClick={onClose} className="p-1 hover:bg-black/10 rounded-full transition">
+            <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* 2. Body (Cuộn được - overflow-y-auto) */}
-        <div className="p-4 overflow-y-auto flex-1">
+        <div className="modal-body overflow-y-auto flex-1">
 
           {/* Khu vực chọn nhạc (Quan trọng nhất - Highlight) */}
           <div
             onClick={() => musicInputRef.current.click()}
-            className={`border-2 border-dashed rounded-xl p-4 mb-4 transition cursor-pointer flex flex-col items-center justify-center gap-2 group
-              ${selectedMusic ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'}`}
+            className={`upload-area rounded-xl p-4 mb-4 transition cursor-pointer flex flex-col items-center justify-center gap-2 group
+              ${selectedMusic ? 'active border-blue-500' : ''}`}
           >
             {selectedMusic ? (
               <>
@@ -113,23 +131,23 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
               </>
             ) : (
               <>
-                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center group-hover:scale-110 transition">
-                  <UploadCloud className="w-6 h-6 text-gray-400" />
+                <div className="w-10 h-10 bg-black/5 rounded-full flex items-center justify-center group-hover:scale-110 transition">
+                  <UploadCloud className="w-6 h-6 opacity-50" />
                 </div>
                 <div className="text-center">
-                  <p className="font-medium text-gray-600">Nhấn để tải nhạc lên</p>
-                  <p className="text-xs text-gray-400 mt-1">MP3, WAV, M4A (Bắt buộc)</p>
+                  <p className="font-medium">Nhấn để tải nhạc lên</p>
+                  <p className="text-xs opacity-60 mt-1">MP3, WAV, M4A (Bắt buộc)</p>
                 </div>
               </>
             )}
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-4 mb-4">
             {/* Cover Art (Ảnh bìa) */}
             <div className="shrink-0">
-              <p className="text-xs font-semibold text-gray-500 mb-2">Ảnh bìa (Tùy chọn)</p>
+              <p className="text-xs font-semibold opacity-60 mb-2">Ảnh bìa (Tùy chọn)</p>
               <div
-                className="relative w-24 h-24 rounded-lg overflow-hidden cursor-pointer group shadow-sm border border-gray-200"
+                className="relative w-24 h-24 rounded-lg overflow-hidden cursor-pointer group shadow-sm border border-black/10"
                 onClick={() => imageInputRef.current.click()}
               >
                 <img
@@ -138,12 +156,10 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
                   className={`w-full h-full object-cover transition duration-300 ${!previewUrl ? 'opacity-80 grayscale' : ''}`}
                 />
 
-                {/* Overlay icon máy ảnh */}
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                   <ImageIcon className="w-6 h-6 text-white" />
                 </div>
 
-                {/* Nút xóa ảnh nếu đã chọn */}
                 {previewUrl && (
                   <button
                     onClick={(e) => {
@@ -160,10 +176,24 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
             </div>
 
             {/* Caption Input */}
-            <div className="flex-1">
-              <p className="text-xs font-semibold text-gray-500 mb-2">Mô tả cảm xúc</p>
+            <div className="flex-1 flex flex-col">
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-xs font-semibold opacity-60">Mô tả cảm xúc</p>
+
+                {/* Visibility Dropdown */}
+                <select
+                  value={visibility}
+                  onChange={(e) => setVisibility(e.target.value)}
+                  className="visibility-select outline-none cursor-pointer appearance-none"
+                >
+                  <option value="PUBLIC">Công khai</option>
+                  <option value="FRIEND">Bạn bè</option>
+                  <option value="PRIVATE">Riêng tư</option>
+                </select>
+              </div>
+
               <textarea
-                className="w-full h-24 p-3 bg-gray-50 rounded-lg outline-none text-sm border focus:border-blue-300 focus:bg-white transition resize-none"
+                className="caption-textarea flex-1"
                 placeholder="Bài hát này khiến bạn nghĩ gì?..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -189,15 +219,15 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
         </div>
 
         {/* 3. Footer (Cố định) */}
-        <div className="p-3 border-t bg-gray-50 flex items-center justify-between shrink-0 rounded-b-xl">
-          <div className="flex items-center gap-2 text-xs text-gray-500 px-2">
-            {selectedMusic ? <span className="text-green-600 flex items-center gap-1">✔ Đã sẵn sàng</span> : <span>Chọn nhạc để tiếp tục</span>}
+        <div className="modal-footer shrink-0 rounded-b-xl">
+          <div className="text-xs opacity-60 px-2">
+            {selectedMusic ? <span className="text-green-600">✔ Đã sẵn sàng</span> : <span>Chọn nhạc để tiếp tục</span>}
           </div>
 
           <button
             onClick={handleSubmit}
-            disabled={isLoading || !selectedMusic} // Disable nếu chưa có nhạc
-            className="bg-black hover:bg-gray-800 text-white font-medium py-2 px-6 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm shadow-lg shadow-gray-300"
+            disabled={isLoading || !selectedMusic}
+            className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm shadow-lg"
           >
             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
             {isLoading ? 'Đang tải lên...' : 'Đăng bài'}

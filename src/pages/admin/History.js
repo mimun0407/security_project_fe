@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import axiosClient from "../../services/axiosClient";
-import Header from "../../components/layout/Header";
 
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -74,7 +73,6 @@ function History() {
 
   return (
     <div className="dashboard-container">
-      <Header />
 
       <div className="container mt-4">
         {/* Module Header */}

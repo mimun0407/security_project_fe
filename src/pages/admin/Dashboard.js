@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import Header from "../../components/layout/Header";
 
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -124,7 +123,6 @@ function AdminMenu() {
 
   return (
     <div className="dashboard-container">
-      <Header />
 
       <div className="container mt-4">
         {/* Module Header */}

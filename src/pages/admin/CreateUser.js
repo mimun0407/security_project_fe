@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import Header from "../../components/layout/Header";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./css/Block.css"; // Reuse modern styles
@@ -80,7 +79,6 @@ function CreateUser() {
 
   return (
     <div className="dashboard-container">
-      <Header />
 
       <div className="container mt-4">
         {/* Simple Back Breadcrumb */}

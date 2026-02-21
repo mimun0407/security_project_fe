@@ -1,0 +1,85 @@
+.feed-container {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.stories-container {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.story-item .story-ring {
+    background: var(--card-bg);
+    padding: 2px;
+    border-radius: 50%;
+}
+
+.story-item .story-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.post-article {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.post-header {
+    padding: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.post-header .username {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.post-header .music-info {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.post-footer {
+    padding: 0.75rem;
+}
+
+.post-footer .likes-count {
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.post-footer .caption {
+    font-size: 0.875rem;
+}
+
+.post-footer .caption .username {
+    font-weight: 600;
+    margin-right: 0.5rem;
+}
+
+.comment-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.comment-input::placeholder {
+    color: var(--text-muted);
+}
