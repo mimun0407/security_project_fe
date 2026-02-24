@@ -19,14 +19,6 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
   const [songName, setSongName] = useState('');
   const [genreId, setGenreId] = useState('');
   const [genres, setGenres] = useState([]);
-  const [isCreatingGenre, setIsCreatingGenre] = useState(false);
-  const [newGenre, setNewGenre] = useState({ name: '', description: '' });
-
-  // Album State
-  const [albumId, setAlbumId] = useState('');
-  const [albums, setAlbums] = useState([]);
-  const [isCreatingAlbum, setIsCreatingAlbum] = useState(false);
-  const [newAlbum, setNewAlbum] = useState({ name: '', description: '' });
 
   const [selectedMusic, setSelectedMusic] = useState(null);
   const [uploadedSong, setUploadedSong] = useState(null); // Result from Step 1
@@ -45,7 +37,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
 
   const DEFAULT_IMAGE_PREVIEW = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=1000&auto=format&fit=crop";
 
-  // Load drafts, genres, and albums
+  // Load drafts and genres
   useEffect(() => {
     if (isOpen) {
       const savedDrafts = localStorage.getItem(DRAFTS_KEY);
@@ -53,7 +45,6 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
         setDrafts(JSON.parse(savedDrafts));
       }
       fetchGenres();
-      fetchAlbums();
     }
   }, [isOpen]);
 
@@ -68,17 +59,6 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
     }
   };
 
-  const fetchAlbums = async () => {
-    if (!user?.idUser) return;
-    try {
-      const response = await albumService.getUserAlbums(user.idUser);
-      if (response && response.success) {
-        setAlbums(response.data || []);
-      }
-    } catch (error) {
-      console.error("Failed to load albums:", error);
-    }
-  };
 
 
 
@@ -126,16 +106,6 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
 
       const songData = response.data.data || response.data;
       setUploadedSong(songData);
-
-      // If album is selected, add song to album
-      if (albumId) {
-        try {
-          await albumService.addSongToAlbum(albumId, songData.id || songData.idSong);
-        } catch (albumErr) {
-          console.error("Lỗi khi thêm vào Album:", albumErr);
-          // Don't block the whole process if album mapping fails
-        }
-      }
 
       // Save to drafts automatically after successful upload if not posted yet
       saveDraft(songData);
@@ -225,13 +195,6 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
     setStep(1);
     setSongName('');
     setGenreId('');
-    setIsCreatingGenre(false);
-    setNewGenre({ name: '', description: '' });
-
-    setAlbumId('');
-    setIsCreatingAlbum(false);
-    setNewAlbum({ name: '', description: '' });
-
 
     setSelectedMusic(null);
     setUploadedSong(null);
@@ -361,137 +324,11 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
                     className="w-full p-3 bg-black/5 rounded-lg border border-transparent focus:border-blue-500 transition outline-none modal-input"
                   />
                 </div>
-                <div className="input-group">
-                  <div className="selection-container">
-                    <label className="selection-label">Album (Tùy chọn)</label>
-                    <div className="selection-wrapper">
-                      {/* Add New Album Card */}
-                      <div
-                        className="selection-card btn-add-card"
-                        onClick={() => setIsCreatingAlbum(true)}
-                      >
-                        <Plus className="w-6 h-6" />
-                        <span className="btn-add-label">Tạo Album</span>
-                      </div>
-
-                      <div className="selection-row">
-                        {/* No Album Card */}
-                        <div
-                          className={`selection-card card-theme-default ${!albumId ? 'active' : ''}`}
-                          onClick={() => setAlbumId('')}
-                        >
-                          <div className="card-icon-wrapper">
-                            <Music className="w-5 h-5" />
-                          </div>
-                          <span className="card-label">Bản đơn</span>
-                        </div>
-
-                        {/* Album Cards */}
-                        {albums.map((album, idx) => (
-                          <div
-                            key={album.id}
-                            className={`selection-card card-theme-${(idx % 6) + 1} ${albumId === album.id ? 'active' : ''}`}
-                            onClick={() => setAlbumId(album.id)}
-                          >
-                            <div className="card-icon-wrapper">
-                              <Disc className="w-5 h-5" />
-                            </div>
-                            <span className="card-label">{album.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {isCreatingAlbum && (
-                      <div className="bg-white/5 p-4 rounded-2xl border border-white/10 mt-3 animate-in zoom-in-95 duration-200">
-                        <div className="flex flex-col gap-3">
-                          <input
-                            type="text"
-                            placeholder="Tên album mới..."
-                            value={newAlbum.name}
-                            onChange={(e) => setNewAlbum({ ...newAlbum, name: e.target.value })}
-                            className="w-full p-2.5 bg-black/20 border border-white/10 rounded-xl outline-none text-sm text-white focus:border-purple-500 transition"
-                          />
-                          <textarea
-                            placeholder="Mô tả album..."
-                            value={newAlbum.description}
-                            onChange={(e) => setNewAlbum({ ...newAlbum, description: e.target.value })}
-                            className="w-full p-2.5 bg-black/20 border border-white/10 rounded-xl outline-none text-sm text-white focus:border-purple-500 transition min-h-[60px] resize-none"
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                if (!newAlbum.name || !user?.idUser) return;
-                                try {
-                                  const now = new Date().toISOString();
-                                  const payload = {
-                                    ...newAlbum,
-                                    userId: user.idUser,
-                                    isActive: true,
-                                    is_active: true,
-                                    active: true,
-                                    enabled: true,
-                                    status: true,
-
-                                    updatedAt: now,
-                                    updated_at: now,
-                                    updatedBy: user.idUser,
-                                    updated_by: user.idUser,
-                                    version: 0
-                                  };
-
-                                  const res = await albumService.createAlbum({
-                                    ...payload,
-                                    createdAt: now,
-                                    created_at: now,
-                                    createdBy: user.idUser,
-                                    created_by: user.idUser,
-                                  });
-                                  if (res.success || res.id || res.idAlbum) {
-                                    await fetchAlbums();
-                                    setAlbumId(res.data?.id || res.id || res.idAlbum);
-                                    setIsCreatingAlbum(false);
-                                    setNewAlbum({ name: '', description: '' });
-                                  } else {
-                                    alert("Tạo album thất bại: " + (res.message || "Vui lòng kiểm tra lại."));
-                                  }
-                                } catch (err) {
-                                  console.error("Album creation error:", err);
-                                  alert("Lỗi kết nối khi tạo album.");
-                                }
-                              }}
-                              className="bg-purple-600 text-white text-[10px] font-bold px-4 py-2 rounded-lg hover:bg-purple-700 transition"
-                            >
-                              XÁC NHẬN
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setIsCreatingAlbum(false)}
-                              className="bg-white/10 text-white text-[10px] font-bold px-4 py-2 rounded-lg hover:bg-white/20 transition"
-                            >
-                              HỦY
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
 
                 <div className="input-group mt-4">
                   <div className="selection-container">
                     <label className="selection-label">Thể loại (Genre)</label>
                     <div className="selection-wrapper">
-                      {/* Add New Genre Card */}
-                      <div
-                        className="selection-card btn-add-card"
-                        onClick={() => setIsCreatingGenre(true)}
-                      >
-                        <Plus className="w-6 h-6" />
-                        <span className="btn-add-label">Thêm mới</span>
-                      </div>
-
                       <div className="selection-row">
                         {/* Genre Cards */}
                         {genres.map((genre, idx) => {
@@ -513,80 +350,6 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
                       </div>
                     </div>
 
-                    {isCreatingGenre && (
-                      <div className="bg-white/5 p-4 rounded-2xl border border-white/10 mt-3 animate-in zoom-in-95 duration-200">
-                        <div className="flex flex-col gap-3">
-                          <input
-                            type="text"
-                            placeholder="Tên thể loại (Pop, Rock...)"
-                            value={newGenre.name}
-                            onChange={(e) => setNewGenre({ ...newGenre, name: e.target.value })}
-                            className="w-full p-2.5 bg-black/20 border border-white/10 rounded-xl outline-none text-sm text-white focus:border-blue-500 transition"
-                          />
-                          <textarea
-                            placeholder="Mô tả thể loại..."
-                            value={newGenre.description}
-                            onChange={(e) => setNewGenre({ ...newGenre, description: e.target.value })}
-                            className="w-full p-2.5 bg-black/20 border border-white/10 rounded-xl outline-none text-sm text-white focus:border-blue-500 transition min-h-[60px] resize-none"
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                if (!newGenre.name) return;
-                                try {
-                                  const now = new Date().toISOString();
-                                  const payload = {
-                                    ...newGenre,
-                                    isActive: true,
-                                    is_active: true,
-                                    active: true,
-                                    enabled: true,
-                                    status: true,
-
-                                    updatedAt: now,
-                                    updated_at: now,
-                                    updatedBy: user?.idUser,
-                                    updated_by: user?.idUser,
-                                    version: 0
-                                  };
-
-                                  const res = await genreService.createGenre({
-                                    ...payload,
-                                    createdAt: now,
-                                    created_at: now,
-                                    createdBy: user?.idUser,
-                                    created_by: user?.idUser,
-                                  });
-                                  // Kiểm tra success hoặc nếu res trả về object có ID (trường hợp backend không bọc success)
-                                  if (res.success || res.id || res.idGenre) {
-                                    await fetchGenres();
-                                    setGenreId(res.data?.id || res.id || res.idGenre);
-                                    setIsCreatingGenre(false);
-                                    setNewGenre({ name: '', description: '' });
-                                  } else {
-                                    alert("Tạo thể loại thất bại: " + (res.message || "Vui lòng kiểm tra lại."));
-                                  }
-                                } catch (err) {
-                                  console.error("Genre creation error:", err);
-                                  alert("Lỗi kết nối khi tạo thể loại.");
-                                }
-                              }}
-                              className="bg-blue-600 text-white text-[10px] font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-                            >
-                              XÁC NHẬN
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setIsCreatingGenre(false)}
-                              className="bg-white/10 text-white text-[10px] font-bold px-4 py-2 rounded-lg hover:bg-white/20 transition"
-                            >
-                              HỦY
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -657,11 +420,6 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
                     <p className="text-[10px] text-blue-600 uppercase font-medium">
                       {genres.find(g => g.id === genreId)?.name || 'Default Genre'}
                     </p>
-                    {albumId && (
-                      <p className="text-[10px] text-purple-600 uppercase font-bold px-1.5 py-0.5 bg-purple-100 rounded">
-                        Album: {albums.find(a => a.id === albumId)?.name}
-                      </p>
-                    )}
                   </div>
 
 

@@ -59,7 +59,7 @@ const RightSidebar = ({ currentUser, suggestions, onFollow }) => {
                 </div>
             </div>
             <div className="mt-8 space-y-2 footer-text">
-                <div>© 2024 INSTAGRAM FROM META</div>
+                <div>© 2026 BQMUSIC FROM BTHTEAMS</div>
             </div>
         </aside>
     );

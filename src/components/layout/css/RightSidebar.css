@@ -1,55 +1,84 @@
 .right-sidebar {
-    background-color: var(--bg-primary);
-    border-left: 1px solid var(--border-color);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border-left: 1px solid var(--glass-border);
     color: var(--text-primary);
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    box-shadow: var(--glass-shadow);
+    padding: 2.5rem;
+    transition: all 0.3s ease;
 }
 
 .right-sidebar .section-title {
-    color: var(--text-secondary);
-    font-weight: 600;
-    font-size: 0.875rem;
+    color: var(--text-primary);
+    font-weight: 800;
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    opacity: 0.8;
 }
 
 .right-sidebar .user-name {
-    font-weight: 600;
-    font-size: 0.875rem;
+    font-weight: 800;
+    font-size: 1rem;
     color: var(--text-primary);
 }
 
 .right-sidebar .user-meta {
     color: var(--text-secondary);
-    font-size: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 500;
 }
 
-.right-sidebar .suggestion-item .username {
-    font-weight: 600;
-    font-size: 0.875rem;
+.suggestion-item {
+    padding: 0.75rem;
+    border-radius: 16px;
+    transition: background 0.3s ease;
 }
 
-.right-sidebar .suggestion-item .mutual {
+.suggestion-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.suggestion-item .username {
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.suggestion-item .mutual {
     color: var(--text-secondary);
-    font-size: 0.75rem;
-}
-
-.right-sidebar .footer-text {
-    color: var(--text-muted);
-    font-size: 0.75rem;
+    font-size: 0.7rem;
+    opacity: 0.7;
 }
 
 .btn-follow {
     color: var(--accent-color);
-    font-weight: 600;
+    font-weight: 800;
     font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    transition: all 0.2s;
 }
 
 .btn-follow:hover {
-    color: var(--accent-hover);
+    background: var(--accent-color);
+    color: white;
 }
 
 .btn-unfollow {
     color: #ef4444;
-    /* Keep red for danger/unfollow action */
-    font-weight: 600;
+    font-weight: 700;
     font-size: 0.75rem;
+    opacity: 0.6;
+}
+
+.btn-unfollow:hover {
+    opacity: 1;
+}
+
+.footer-text {
+    opacity: 0.4;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }

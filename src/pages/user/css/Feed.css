@@ -1,74 +1,138 @@
 .feed-container {
-    background-color: var(--bg-primary);
+    background: var(--bg-primary);
+    background-image:
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.05) 0px, transparent 50%);
     color: var(--text-primary);
     min-height: 100vh;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Stories Section */
 .stories-container {
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--glass-shadow);
 }
 
-.story-item .story-ring {
-    background: var(--card-bg);
-    padding: 2px;
+.story-item {
+    transition: transform 0.3s ease;
+}
+
+.story-item:hover {
+    transform: translateY(-2px);
+}
+
+.story-ring {
+    background: var(--bg-primary);
+    padding: 2.5px;
     border-radius: 50%;
+    transition: all 0.3s ease;
 }
 
-.story-item .story-avatar {
-    width: 56px;
-    height: 56px;
+.story-avatar {
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     object-fit: cover;
+    border: 2px solid transparent;
 }
 
+/* Post Article Card */
 .post-article {
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 28px;
     overflow: hidden;
-    margin-bottom: 1rem;
+    margin-bottom: 2.5rem;
+    box-shadow: var(--glass-shadow);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+}
+
+.post-article:hover {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
 
 .post-header {
-    padding: 0.75rem;
+    padding: 1rem 1.25rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
 .post-header .username {
-    font-weight: 600;
-    font-size: 0.875rem;
+    font-weight: 700;
+    font-size: 0.95rem;
     color: var(--text-primary);
+    letter-spacing: -0.01em;
 }
 
 .post-header .music-info {
     font-size: 0.75rem;
+    font-weight: 500;
     color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0.8;
 }
 
+/* Media Section */
+.post-media-container {
+    position: relative;
+    margin: 0 12px;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #000;
+    aspect-ratio: 1/1;
+}
+
+.post-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.post-article:hover .post-image {
+    transform: scale(1.05);
+}
+
+/* Footer Section */
 .post-footer {
-    padding: 0.75rem;
+    padding: 1.25rem;
 }
 
-.post-footer .likes-count {
-    font-weight: 600;
-    font-size: 0.875rem;
-    margin-bottom: 0.5rem;
+.likes-count {
+    font-weight: 800;
+    font-size: 0.9rem;
+    margin-bottom: 0.6rem;
+    color: var(--text-primary);
 }
 
-.post-footer .caption {
-    font-size: 0.875rem;
+.caption {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-primary);
 }
 
-.post-footer .caption .username {
-    font-weight: 600;
-    margin-right: 0.5rem;
+.caption .username {
+    font-weight: 700;
+    margin-right: 0.6rem;
+}
+
+.comment-input-container {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .comment-input {
@@ -76,10 +140,32 @@
     border: none;
     outline: none;
     width: 100%;
-    font-size: 0.875rem;
+    font-size: 0.9rem;
     color: var(--text-primary);
+    font-weight: 500;
 }
 
 .comment-input::placeholder {
     color: var(--text-muted);
+    font-weight: 400;
+}
+
+/* Audio Player Overlay */
+.audio-overlay {
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 60%);
+    padding: 1.5rem;
+}
+
+.audio-progress-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+}
+
+.audio-progress-fill {
+    height: 100%;
+    background: var(--grad-primary);
+    border-radius: 2px;
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
 }
