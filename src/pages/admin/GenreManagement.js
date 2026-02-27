@@ -58,6 +58,38 @@ function GenreManagement() {
         setError("");
     };
 
+    const handleDeleteGenre = async (id, name) => {
+        if (!window.confirm(`Bạn có chắc chắn muốn xóa thể loại "${name}"?`)) return;
+
+        setLoading(true);
+        setError("");
+        try {
+            const response = await genreService.deleteGenre(id);
+            if (response && (response.success || response.status === 200)) {
+                setSuccessMessage(`Đã xóa thể loại "${name}" thành công!`);
+                fetchGenres(searchTerm);
+                setTimeout(() => setSuccessMessage(""), 3000);
+            } else {
+                // Specific handling for "in use" case if backend provides message
+                const msg = response?.message || "";
+                if (msg.toLowerCase().includes("in use") || msg.toLowerCase().includes("song") || msg.toLowerCase().includes("liên kết")) {
+                    setError(`Cảnh báo: Thể loại "${name}" hiện đang có bài hát. Vui lòng chuyển các bài hát sang thể loại khác trước khi xóa.`);
+                } else {
+                    setError(msg || "Xóa thể loại thất bại.");
+                }
+            }
+        } catch (err) {
+            const msg = getErrorMessage(err);
+            if (msg.toLowerCase().includes("in use") || msg.toLowerCase().includes("song") || msg.toLowerCase().includes("liên kết")) {
+                setError(`Cảnh báo: Thể loại "${name}" hiện đang có bài hát. Vui lòng chuyển các bài hát sang thể loại khác trước khi xóa.`);
+            } else {
+                setError(msg);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -133,6 +165,12 @@ function GenreManagement() {
                     </div>
                 )}
 
+                {error && !showModal && (
+                    <div className="alert-message alert-danger mb-4 animate__animated animate__fadeIn">
+                        {error}
+                    </div>
+                )}
+
                 {/* Main Content Card */}
                 <div className="genre-card">
                     <div className="genre-header">
@@ -183,6 +221,13 @@ function GenreManagement() {
                                                     >
                                                         <i className="bi bi-pencil-fill"></i>
                                                     </button>
+                                                    <button
+                                                        className="btn-genre-action btn-genre-delete text-red-500 hover:bg-red-50"
+                                                        onClick={() => handleDeleteGenre(genre.id, genre.name)}
+                                                        title="Delete Genre"
+                                                    >
+                                                        <i className="bi bi-trash-fill"></i>
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -218,7 +263,7 @@ function GenreManagement() {
                             <form onSubmit={handleSubmit}>
                                 <div className="modal-body p-4">
                                     {error && (
-                                        <div className="alert alert-danger border-0 rounded-3 small mb-3">
+                                        <div className="alert-message alert-danger border-0 rounded-3 small mb-3">
                                             {error}
                                         </div>
                                     )}

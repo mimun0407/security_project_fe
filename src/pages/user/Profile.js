@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "../../components/layout/Sidebar";
-import { Settings, Grid, Bookmark, User as UserIcon, Plus, Camera, MessageCircle, Link as LinkIcon, Music } from 'lucide-react';
+import { Settings, Grid, Bookmark, User as UserIcon, Plus, Camera, MessageCircle, Link as LinkIcon, Music, Lock } from 'lucide-react';
+import userService from "../../services/userService";
 import "./css/Profile.css";
 
 function UserMenu() {
@@ -22,6 +23,15 @@ function UserMenu() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("posts");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isChangePwdOpen, setIsChangePwdOpen] = useState(false);
+
+  // Change Password State
+  const [pwdForm, setPwdForm] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+  const [pwdErrors, setPwdErrors] = useState({});
 
   // Edit Form State
   const [form, setForm] = useState({
@@ -50,20 +60,15 @@ function UserMenu() {
 
     const fetchUser = async () => {
       try {
-        const res = await axios.get(`http://localhost:8080/api/v1/user/userId/${targetId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        });
-        const responseData = res.data;
-        const data = responseData.data || responseData;
-        setUser(data);
+        const data = await userService.getUserById(targetId);
+        setUser(data.data || data);
 
         // Init form
         setForm({
-          name: data.name || "",
-          email: data.email || "",
-          isActive: data.isActive ?? true,
-          imagePreview: getImageUrl(data.imageUrl),
+          name: (data.data || data).name || "",
+          email: (data.data || data).email || "",
+          isActive: (data.data || data).isActive ?? true,
+          imagePreview: getImageUrl((data.data || data).imageUrl),
         });
 
       } catch (err) {
@@ -79,49 +84,35 @@ function UserMenu() {
   // Edit Handlers
   const handleSave = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem("token");
       if (!token || !user) {
         alert("Không có token hoặc user");
         return;
       }
 
-      const payload = {
-        name: form.name,
-        username: user.username,
-        email: form.email,
-        isActive: form.isActive,
-      };
-
-      const fd = new FormData();
-      fd.append(
-        "user",
-        new Blob([JSON.stringify(payload)], { type: "application/json" })
-      );
-      if (form.imageFile) {
-        fd.append("image", form.imageFile);
+      // 1. Update Name if changed
+      if (form.name !== user.name) {
+        await userService.updateName(form.name);
       }
 
-      await axios.put(`http://localhost:8080/api/v1/user/${user.email}`, fd, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-        withCredentials: true,
-      });
+      // 2. Update Image if new file selected
+      if (form.imageFile) {
+        await userService.updateImage(form.imageFile);
+      }
 
-      // Fetch lại user sau khi update
-      const res = await axios.get(`http://localhost:8080/api/v1/user/${user.email}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
-      setUser(res.data);
+      // 3. Fetch updated user data
+      const updatedResponse = await userService.getUserById(targetId);
+      const updatedUser = updatedResponse.data || updatedResponse;
+
+      setUser(updatedUser);
 
       setForm({
-        name: res.data.name || "",
-        email: res.data.email || "",
-        isActive: res.data.isActive ?? true,
+        name: updatedUser.name || "",
+        email: updatedUser.email || "",
+        isActive: updatedUser.isActive ?? true,
         imageFile: null,
-        imagePreview: getImageUrl(res.data.imageUrl),
+        imagePreview: getImageUrl(updatedUser.imageUrl),
       });
 
       setIsEditModalOpen(false);
@@ -130,6 +121,8 @@ function UserMenu() {
       console.error("Lỗi khi update user:", err);
       const msg = err?.response?.data?.message || "Cập nhật thất bại";
       alert(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -141,6 +134,58 @@ function UserMenu() {
         imageFile: file,
         imagePreview: URL.createObjectURL(file)
       }));
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    let errors = {};
+    const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+    if (!pwdForm.oldPassword) errors.oldPassword = "Vui lòng nhập mật khẩu hiện tại";
+    if (!passRegex.test(pwdForm.newPassword)) {
+      errors.newPassword = "Mật khẩu phải ít nhất 8 ký tự, gồm chữ hoa, chữ thường và số";
+    }
+    if (pwdForm.newPassword !== pwdForm.confirmPassword) {
+      errors.confirmPassword = "Mật khẩu xác nhận không khớp";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setPwdErrors(errors);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await userService.changePassword({
+        email: user.email,
+        oldPassword: pwdForm.oldPassword,
+        newPassword: pwdForm.newPassword,
+        confirmPassword: pwdForm.confirmPassword
+      });
+
+      if (response && (response.success || response.status === 200)) {
+        alert("Đổi mật khẩu thành công!");
+        setIsChangePwdOpen(false);
+        setPwdForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+        setPwdErrors({});
+      } else {
+        const msg = response?.message || "Đổi mật khẩu thất bại";
+        if (msg.toLowerCase().includes("current") || msg.toLowerCase().includes("mật khẩu cũ")) {
+          setPwdErrors({ oldPassword: "Mật khẩu hiện tại không chính xác" });
+        } else {
+          alert(msg);
+        }
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Lỗi hệ thống khi đổi mật khẩu";
+      if (msg.toLowerCase().includes("current") || msg.toLowerCase().includes("mật khẩu cũ")) {
+        setPwdErrors({ oldPassword: "Mật khẩu hiện tại không chính xác" });
+      } else {
+        alert(msg);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -182,7 +227,10 @@ function UserMenu() {
                     <Settings className="w-4 h-4" />
                     Edit Profile
                   </button>
-                  <button className="ig-btn bg-white/10">Follow</button>
+                  <button className="ig-btn flex items-center gap-2" onClick={() => setIsChangePwdOpen(true)}>
+                    <Lock className="w-4 h-4" />
+                    Change Password
+                  </button>
                 </div>
               </div>
 
@@ -308,6 +356,78 @@ function UserMenu() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {isChangePwdOpen && (
+        <div className="ig-modal-overlay" onClick={() => setIsChangePwdOpen(false)}>
+          <div className="edit-profile-card" onClick={e => e.stopPropagation()}>
+            <h3 className="edit-profile-title">Change Password</h3>
+            <form onSubmit={handleChangePassword} className="edit-form-container">
+              <div className="edit-form-group">
+                <label className="edit-label">Current Password</label>
+                <input
+                  type="password"
+                  value={pwdForm.oldPassword}
+                  onChange={(e) => {
+                    setPwdForm({ ...pwdForm, oldPassword: e.target.value });
+                    if (pwdErrors.oldPassword) setPwdErrors({ ...pwdErrors, oldPassword: null });
+                  }}
+                  className={`edit-input ${pwdErrors.oldPassword ? 'border-red-500' : ''}`}
+                  placeholder="Enter current password"
+                />
+                {pwdErrors.oldPassword && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">{pwdErrors.oldPassword}</p>}
+              </div>
+
+              <div className="edit-form-group">
+                <label className="edit-label">New Password</label>
+                <input
+                  type="password"
+                  value={pwdForm.newPassword}
+                  onChange={(e) => {
+                    setPwdForm({ ...pwdForm, newPassword: e.target.value });
+                    if (pwdErrors.newPassword) setPwdErrors({ ...pwdErrors, newPassword: null });
+                  }}
+                  className={`edit-input ${pwdErrors.newPassword ? 'border-red-500' : ''}`}
+                  placeholder="Enter new password"
+                />
+                {pwdErrors.newPassword && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">{pwdErrors.newPassword}</p>}
+              </div>
+
+              <div className="edit-form-group">
+                <label className="edit-label">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={pwdForm.confirmPassword}
+                  onChange={(e) => {
+                    setPwdForm({ ...pwdForm, confirmPassword: e.target.value });
+                    if (pwdErrors.confirmPassword) setPwdErrors({ ...pwdErrors, confirmPassword: null });
+                  }}
+                  className={`edit-input ${pwdErrors.confirmPassword ? 'border-red-500' : ''}`}
+                  placeholder="Confirm new password"
+                />
+                {pwdErrors.confirmPassword && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">{pwdErrors.confirmPassword}</p>}
+              </div>
+
+              <div className="edit-actions">
+                <button
+                  type="button"
+                  onClick={() => setIsChangePwdOpen(false)}
+                  className="btn-cancel"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-save"
+                >
+                  {loading ? "Processing..." : "Update Password"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

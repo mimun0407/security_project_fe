@@ -34,6 +34,16 @@ const genreService = {
         const response = await axiosClient.put(`/genre/${id}`, genreData);
         return response.data;
     },
+    /**
+     * Delete a genre
+     * @param {string} id 
+     * @returns {Promise<Object>} Response data
+     */
+    deleteGenre: async (id) => {
+        // API endpoint: /genre/{id}
+        const response = await axiosClient.delete(`/genre/${id}`);
+        return response.data;
+    },
 };
 
 export default genreService;

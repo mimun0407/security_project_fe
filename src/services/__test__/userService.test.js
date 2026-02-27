@@ -48,7 +48,7 @@ describe("userService", () => {
 
             const result = await userService.register(userData);
 
-            expect(axiosClient.post).toHaveBeenCalledWith("/user", userData);
+            expect(axiosClient.post).toHaveBeenCalledWith("/user/register", userData);
             expect(result).toEqual(mockResponse.data);
         });
     });
@@ -76,6 +76,97 @@ describe("userService", () => {
             const result = await userService.verifyOtpForgot(email, otp);
 
             expect(axiosClient.post).toHaveBeenCalledWith(`/user/confirm-otp-fp?email=${email}&otp=${otp}`);
+            expect(result).toEqual(mockResponse.data);
+        });
+    });
+    describe("getUserById", () => {
+        it("should call axiosClient.get with correct userId", async () => {
+            const userId = "123";
+            const mockResponse = { data: { name: "Test User" } };
+            axiosClient.get.mockResolvedValue(mockResponse);
+
+            const result = await userService.getUserById(userId);
+
+            expect(axiosClient.get).toHaveBeenCalledWith(`/user/userId/${userId}`);
+            expect(result).toEqual(mockResponse.data);
+        });
+    });
+
+    describe("getUserByEmail", () => {
+        it("should call axiosClient.get with correct email", async () => {
+            const email = "test@example.com";
+            const mockResponse = { data: { name: "Test User" } };
+            axiosClient.get.mockResolvedValue(mockResponse);
+
+            const result = await userService.getUserByEmail(email);
+
+            expect(axiosClient.get).toHaveBeenCalledWith(`/user/${email}`);
+            expect(result).toEqual(mockResponse.data);
+        });
+    });
+
+    describe("updateUser", () => {
+        it("should call axiosClient.put with correct email and formData", async () => {
+            const email = "test@example.com";
+            const formData = new FormData();
+            const mockResponse = { data: { success: true } };
+            axiosClient.put.mockResolvedValue(mockResponse);
+
+            const result = await userService.updateUser(email, formData);
+
+            expect(axiosClient.put).toHaveBeenCalledWith(`/user/${email}`, formData, expect.any(Object));
+            expect(result).toEqual(mockResponse.data);
+        });
+    });
+
+    describe("login", () => {
+        it("should call axiosClient.post with credentials", async () => {
+            const credentials = { email: "test@example.com", password: "password123" };
+            const mockResponse = { data: { token: "token123" } };
+            axiosClient.post.mockResolvedValue(mockResponse);
+
+            const result = await userService.login(credentials);
+
+            expect(axiosClient.post).toHaveBeenCalledWith("/auth", credentials);
+            expect(result).toEqual(mockResponse.data);
+        });
+    });
+
+    describe("changePassword", () => {
+        it("should call axiosClient.post with password data", async () => {
+            const pwdData = { email: "test@example.com", oldPassword: "old", newPassword: "new", confirmPassword: "new" };
+            const mockResponse = { data: { success: true } };
+            axiosClient.post.mockResolvedValue(mockResponse);
+
+            const result = await userService.changePassword(pwdData);
+
+            expect(axiosClient.post).toHaveBeenCalledWith("/user/change-password", pwdData);
+            expect(result).toEqual(mockResponse.data);
+        });
+    });
+
+    describe("updateImage", () => {
+        it("should call axiosClient.post with formData and file", async () => {
+            const file = new File(["test"], "test.png", { type: "image/png" });
+            const mockResponse = { data: { success: true } };
+            axiosClient.post.mockResolvedValue(mockResponse);
+
+            const result = await userService.updateImage(file);
+
+            expect(axiosClient.post).toHaveBeenCalledWith("/user/update-image", expect.any(FormData), expect.any(Object));
+            expect(result).toEqual(mockResponse.data);
+        });
+    });
+
+    describe("updateName", () => {
+        it("should call axiosClient.post with name query param", async () => {
+            const name = "New Name";
+            const mockResponse = { data: { success: true } };
+            axiosClient.post.mockResolvedValue(mockResponse);
+
+            const result = await userService.updateName(name);
+
+            expect(axiosClient.post).toHaveBeenCalledWith(expect.stringContaining(`/user/update-name?name=${encodeURIComponent(name)}`));
             expect(result).toEqual(mockResponse.data);
         });
     });

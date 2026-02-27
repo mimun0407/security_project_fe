@@ -73,6 +73,78 @@ const userService = {
 
     // Placeholder for other user services
 
+    /**
+     * Get user details by ID
+     * @param {string} userId 
+     * @returns {Promise<Object>} Response data
+     */
+    getUserById: async (userId) => {
+        const response = await axiosClient.get(`/user/userId/${userId}`);
+        return response.data;
+    },
+
+    /**
+     * Get user details by email
+     * @param {string} email 
+     * @returns {Promise<Object>} Response data
+     */
+    getUserByEmail: async (email) => {
+        const response = await axiosClient.get(`/user/${email}`);
+        return response.data;
+    },
+
+    updateUser: async (email, formData) => {
+        const response = await axiosClient.put(`/user/${email}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
+
+    /**
+     * Update user avatar image
+     * @param {File} file 
+     * @returns {Promise<Object>} Response data
+     */
+    updateImage: async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axiosClient.post('/user/update-image', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
+
+    /**
+     * Update user display name
+     * @param {string} name 
+     * @returns {Promise<Object>} Response data
+     */
+    updateName: async (name) => {
+        const response = await axiosClient.post(`/user/update-name?name=${encodeURIComponent(name)}`);
+        return response.data;
+    },
+
+    /**
+     * Login user
+     * @param {Object} credentials { email, password }
+     * @returns {Promise<Object>} Response data
+     */
+    login: async (credentials) => {
+        // API endpoint: /auth
+        const response = await axiosClient.post("/auth", credentials);
+        return response.data;
+    },
+
+    /**
+     * Change password for logged-in user
+     * @param {Object} data { email, oldPassword, newPassword, confirmPassword }
+     * @returns {Promise<Object>} Response data
+     */
+    changePassword: async (data) => {
+        // API endpoint: /user/change-password
+        const response = await axiosClient.post("/user/change-password", data);
+        return response.data;
+    },
 };
 
 export default userService;

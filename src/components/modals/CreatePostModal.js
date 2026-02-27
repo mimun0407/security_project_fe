@@ -19,6 +19,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
   const [songName, setSongName] = useState('');
   const [genreId, setGenreId] = useState('');
   const [genres, setGenres] = useState([]);
+  const [errors, setErrors] = useState({}); // To track validation errors
 
   const [selectedMusic, setSelectedMusic] = useState(null);
   const [uploadedSong, setUploadedSong] = useState(null); // Result from Step 1
@@ -86,11 +87,17 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
 
   // Step 1: Upload Song
   const handleUploadSong = async () => {
-    if (!selectedMusic || !songName) {
-      alert("Vui lòng chọn file nhạc và nhập tên bài hát!");
+    let newErrors = {};
+    if (!selectedMusic) newErrors.music = true;
+    if (!songName.trim()) newErrors.name = true;
+    if (!genreId) newErrors.genre = true;
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
+    setErrors({});
     setIsLoading(true);
     try {
       const formData = new FormData();
@@ -114,7 +121,12 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
 
     } catch (error) {
       console.error("Lỗi upload nhạc:", error);
-      alert("Upload nhạc thất bại. Vui lòng thử lại.");
+      const msg = error?.response?.data?.message || "";
+      if (msg.toLowerCase().includes("duplicate") || msg.toLowerCase().includes("trùng") || msg.toLowerCase().includes("exists")) {
+        alert("Cảnh báo: Bài hát này có thể đã tồn tại trong hệ thống (trùng tên và nghệ sĩ).");
+      } else {
+        alert("Upload nhạc thất bại. Vui lòng thử lại.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -195,6 +207,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
     setStep(1);
     setSongName('');
     setGenreId('');
+    setErrors({});
 
     setSelectedMusic(null);
     setUploadedSong(null);
@@ -274,7 +287,8 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
               <div
                 onClick={() => musicInputRef.current.click()}
                 className={`upload-area rounded-xl p-6 mb-4 transition cursor-pointer flex flex-col items-center justify-center gap-3 group
-                  ${selectedMusic ? 'active border-blue-500' : ''}`}
+                  ${selectedMusic ? 'active border-blue-500' : ''}
+                  ${errors.music ? 'border-red-500 bg-red-50' : ''}`}
               >
                 {selectedMusic ? (
                   <>
@@ -312,6 +326,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
                   </>
                 )}
               </div>
+              {errors.music && <p className="text-[10px] text-red-500 font-bold mb-4 text-center">Vui lòng chọn file nhạc</p>}
 
               <div className="flex flex-col gap-4">
                 <div className="input-group">
@@ -319,15 +334,22 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
                   <input
                     type="text"
                     value={songName}
-                    onChange={(e) => setSongName(e.target.value)}
+                    onChange={(e) => {
+                      setSongName(e.target.value);
+                      if (errors.name) setErrors({ ...errors, name: false });
+                    }}
                     placeholder="Nhập tên bài hát..."
-                    className="w-full p-3 bg-black/5 rounded-lg border border-transparent focus:border-blue-500 transition outline-none modal-input"
+                    className={`w-full p-3 bg-black/5 rounded-lg border transition outline-none modal-input
+                      ${errors.name ? 'border-red-500 bg-red-50' : 'border-transparent focus:border-blue-500'}`}
                   />
+                  {errors.name && <p className="text-[10px] text-red-500 font-bold mt-1">Tên bài hát không được để trống</p>}
                 </div>
 
                 <div className="input-group mt-4">
                   <div className="selection-container">
-                    <label className="selection-label">Thể loại (Genre)</label>
+                    <label className={`selection-label ${errors.genre ? 'text-red-500' : ''}`}>
+                      Thể loại (Genre) {errors.genre && <span className="text-[10px] font-bold"> - Vui lòng chọn</span>}
+                    </label>
                     <div className="selection-wrapper">
                       <div className="selection-row">
                         {/* Genre Cards */}
@@ -337,8 +359,11 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
                           return (
                             <div
                               key={genre.id}
-                              className={`selection-card card-theme-${(idx % 6) + 1} ${genreId === genre.id ? 'active' : ''}`}
-                              onClick={() => setGenreId(genre.id)}
+                              className={`selection-card card-theme-${(idx % 6) + 1} ${genreId === genre.id ? 'active' : ''} ${errors.genre ? 'border-red-300' : ''}`}
+                              onClick={() => {
+                                setGenreId(genre.id);
+                                if (errors.genre) setErrors({ ...errors, genre: false });
+                              }}
                             >
                               <div className="card-icon-wrapper">
                                 <IconComp className="w-5 h-5" />
@@ -349,10 +374,8 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
                         })}
                       </div>
                     </div>
-
                   </div>
                 </div>
-
               </div>
             </div>
           ) : (
@@ -421,8 +444,6 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
                       {genres.find(g => g.id === genreId)?.name || 'Default Genre'}
                     </p>
                   </div>
-
-
                 </div>
               </div>
             </div>
@@ -438,7 +459,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
           {step === 1 && !showDrafts && (
             <button
               onClick={handleUploadSong}
-              disabled={isLoading || !selectedMusic || !songName}
+              disabled={isLoading}
               className="btn-primary flex items-center gap-2"
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}

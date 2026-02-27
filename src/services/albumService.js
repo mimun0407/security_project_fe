@@ -13,6 +13,14 @@ const albumService = {
     },
 
     /**
+     * Update an album
+     */
+    updateAlbum: async (albumId, albumData) => {
+        const response = await axiosClient.put(`/album/${albumId}`, albumData);
+        return response.data;
+    },
+
+    /**
      * Add a song to an existing album
      * @param {string} albumId 
      * @param {string} songId 
@@ -34,8 +42,23 @@ const albumService = {
      */
     getUserAlbums: async (userId) => {
         // Assuming there's an endpoint to get user albums
-        // If not provided exactly, common pattern is /album/user/{userId} or /album?userId=...
         const response = await axiosClient.get(`/album?userId=${userId}`);
+        return response.data;
+    },
+
+    /**
+     * Get all albums (for admin)
+     */
+    getAllAlbums: async () => {
+        const response = await axiosClient.get("/album");
+        return response.data;
+    },
+
+    /**
+     * Delete an album
+     */
+    deleteAlbum: async (albumId) => {
+        const response = await axiosClient.delete(`/album/${albumId}`);
         return response.data;
     }
 };

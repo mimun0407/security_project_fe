@@ -134,6 +134,12 @@ function AdminMenu() {
             </div>
             <div className="header-actions">
               <button
+                className="btn-history text-nowrap"
+                onClick={() => navigate("/admin/albums")}
+              >
+                <i className="bi bi-journal-album"></i> Album Management
+              </button>
+              <button
                 className="btn-history"
                 onClick={() => navigate("/admin/genres")}
               >

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import axios from "axios";
+import userService from "../../services/userService";
 import BQMusicLogo from "../../components/common/BQMusicLogo";
 import { getErrorMessage } from "../../utils/errorUtils";
 import "./css/Login.css";
@@ -32,16 +32,9 @@ function Login() {
     setErrorMsg("");
 
     try {
-      const response = await axios.post(
-        "http://localhost:8080/api/v1/auth",
-        { email, password },
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        }
-      );
+      const data = await userService.login({ email, password });
 
-      const { token, refreshToken, role, idUser, email: resEmail } = response.data;
+      const { token, refreshToken, role, idUser, email: resEmail } = data;
 
       login({
         token,
@@ -59,8 +52,6 @@ function Login() {
     } catch (error) {
       const message = getErrorMessage(error);
       setErrorMsg(message);
-      // Optional: keep alert if preferred, or rely on inline.
-      // I'll add inline display below form title.
     } finally {
       setIsLoading(false);
     }

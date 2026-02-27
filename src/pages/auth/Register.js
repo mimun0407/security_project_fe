@@ -32,6 +32,21 @@ function Register() {
         rePassword: "",
     });
 
+    // Validation Regex
+    const validateEmail = (email) => {
+        return String(email)
+            .toLowerCase()
+            .match(
+                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            );
+    };
+
+    const validatePassword = (pass) => {
+        // At least 8 characters, one uppercase, one lowercase and one number
+        const re = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
+        return re.test(pass);
+    };
+
     // Timer logic for OTP
     useEffect(() => {
         let interval = null;
@@ -48,6 +63,12 @@ function Register() {
 
     const handleEmailSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validateEmail(email)) {
+            setErrorMessage("Vui lòng nhập đúng định dạng email (ví dụ: user@example.com)");
+            return;
+        }
+
         setIsLoading(true);
         setErrorMessage("");
         setSuccessMessage("");
@@ -59,7 +80,13 @@ function Register() {
                 setTimeLeft(90);
                 setCanResend(false);
             } else {
-                setErrorMessage(getErrorMessage({ response }, response.message || "Failed to send OTP."));
+                // Handle "Email already exists" if returned in response.message
+                const msg = response.message || "Failed to send OTP.";
+                if (msg.toLowerCase().includes("exists") || msg.toLowerCase().includes("tồn tại")) {
+                    setErrorMessage("Email này đã được sử dụng. Vui lòng đăng nhập hoặc dùng email khác.");
+                } else {
+                    setErrorMessage(getErrorMessage({ response }, msg));
+                }
             }
         } catch (err) {
             console.error(err);
@@ -93,8 +120,18 @@ function Register() {
     const handleRegisterSubmit = async (e) => {
         e.preventDefault();
 
+        if (form.name.trim().length < 2) {
+            setErrorMessage("Họ tên phải có ít nhất 2 ký tự.");
+            return;
+        }
+
+        if (!validatePassword(form.password)) {
+            setErrorMessage("Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và chữ số.");
+            return;
+        }
+
         if (form.password !== form.rePassword) {
-            setErrorMessage("Passwords do not match!");
+            setErrorMessage("Mật khẩu xác nhận không khớp!");
             return;
         }
 

@@ -16,9 +16,28 @@ function ForgotPassword() {
     const [successMessage, setSuccessMessage] = useState("");
     const navigate = useNavigate();
 
+    // Validation Regex
+    const validateEmail = (e) => {
+        return String(e)
+            .toLowerCase()
+            .match(
+                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            );
+    };
+
+    const validatePassword = (pass) => {
+        const re = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
+        return re.test(pass);
+    };
+
 
     const handleSendOtp = async (e) => {
         e.preventDefault();
+        if (!validateEmail(email)) {
+            setErrorMessage("Vui lòng nhập đúng định dạng email.");
+            return;
+        }
+
         setIsLoading(true);
         setErrorMessage("");
 
@@ -28,7 +47,7 @@ function ForgotPassword() {
             if (response && response.success) {
                 setIsSent(true);
             } else {
-                setErrorMessage(response.message || "Something went wrong. Please try again.");
+                setErrorMessage(response.message || "Email không tồn tại trong hệ thống.");
             }
         } catch (err) {
             console.error(err);
@@ -48,10 +67,15 @@ function ForgotPassword() {
 
             if (response && response.success) {
                 setIsVerified(true);
-                setSuccessMessage("OTP Verified! Please enter your new password.");
+                setSuccessMessage("Xác thực OTP thành công! Vui lòng nhập mật khẩu mới.");
                 setTimeout(() => setSuccessMessage(""), 3000);
             } else {
-                setErrorMessage(response.message || "Invalid OTP. Please try again.");
+                const msg = response.message || "Mã OTP không hợp lệ hoặc đã hết hạn.";
+                if (msg.includes("5") || msg.toLowerCase().includes("lock") || msg.toLowerCase().includes("khóa")) {
+                    setErrorMessage("Bạn đã nhập sai quá 5 lần. Yêu cầu đã bị tạm khóa trong 15 phút.");
+                } else {
+                    setErrorMessage(msg);
+                }
             }
         } catch (err) {
             console.error(err);
@@ -64,8 +88,13 @@ function ForgotPassword() {
     const handleResetPassword = async (e) => {
         e.preventDefault();
 
+        if (!validatePassword(newPassword)) {
+            setErrorMessage("Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và chữ số.");
+            return;
+        }
+
         if (newPassword !== confirmPassword) {
-            setErrorMessage("Passwords do not match!");
+            setErrorMessage("Mật khẩu xác nhận không khớp!");
             return;
         }
 

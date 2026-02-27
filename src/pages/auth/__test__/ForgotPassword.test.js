@@ -87,8 +87,8 @@ describe('ForgotPassword Component', () => {
         });
 
         await waitFor(() => {
-            // Success message "OTP Verified!"
-            expect(screen.getByText(/OTP Verified!/i)).toBeInTheDocument();
+            // Success message matching ForgotPassword.js:70
+            expect(screen.getByText(/Xác thực OTP thành công/i)).toBeInTheDocument();
         });
 
         await screen.findByPlaceholderText(/^New Password$/i);

@@ -149,16 +149,16 @@ describe('Register Component', () => {
 
         // Step 3
         userEvent.type(screen.getByPlaceholderText(/Full Name/i), 'Test User');
-        userEvent.type(screen.getByPlaceholderText(/^Password$/i), 'password123'); // Regex for exact match to avoid Confirm Password
-        userEvent.type(screen.getByPlaceholderText(/Confirm Password/i), 'password123');
+        userEvent.type(screen.getByPlaceholderText(/^Password$/i), 'Password123'); // Regex for exact match to avoid Confirm Password
+        userEvent.type(screen.getByPlaceholderText(/Confirm Password/i), 'Password123');
 
         fireEvent.click(screen.getByText(/Sign Up/i));
 
         await waitFor(() => {
             expect(userService.register).toHaveBeenCalledWith({
                 name: 'Test User',
-                password: 'password123',
-                rePassword: 'password123',
+                password: 'Password123',
+                rePassword: 'Password123',
                 email: 'test@example.com'
             });
         });

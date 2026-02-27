@@ -3,24 +3,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import Login from '../Login';
-import axios from 'axios';
+import userService from '../../../services/userService';
 
-
-// Mock axios
-jest.mock('axios', () => {
-    return {
-        create: jest.fn(() => ({
-            interceptors: {
-                request: { use: jest.fn() },
-                response: { use: jest.fn() }
-            },
-            get: jest.fn(),
-            post: jest.fn()
-        })),
-        post: jest.fn(),
-        get: jest.fn()
-    };
-});
+// Mock userService
+jest.mock('../../../services/userService');
 
 // Mock useAuth
 const mockLogin = jest.fn();
@@ -51,24 +37,21 @@ describe('Login Component', () => {
         expect(screen.getByRole('button', { name: /Log in with Google/i })).toBeInTheDocument();
     });
 
-    test('valid login calls API and login context', async () => {
+    test('valid login calls userService and login context', async () => {
         const mockUserRes = {
-            data: {
-                token: 'token123',
-                refreshToken: 'refresh123',
-                role: ['USER'],
-                idUser: '123',
-                email: 'test@example.com'
-            }
+            token: 'token123',
+            refreshToken: 'refresh123',
+            role: ['USER'],
+            idUser: '123',
+            email: 'test@example.com'
         };
-        axios.post.mockResolvedValue(mockUserRes);
+        userService.login.mockResolvedValue(mockUserRes);
 
         renderWithRouter(<Login />);
 
         userEvent.type(screen.getByPlaceholderText(/Email/i), 'test@example.com');
         userEvent.type(screen.getByPlaceholderText(/^Password$/i), 'password123');
 
-        // Specific selector for "Log in" button to avoid conflict with "Log in with Google"
         const loginButtons = screen.getAllByRole('button');
         const submitButton = loginButtons.find(btn => btn.textContent === 'Log in');
 
@@ -79,11 +62,10 @@ describe('Login Component', () => {
         }
 
         await waitFor(() => {
-            expect(axios.post).toHaveBeenCalledWith(
-                "http://localhost:8080/api/v1/auth",
-                { email: 'test@example.com', password: 'password123' },
-                expect.any(Object)
-            );
+            expect(userService.login).toHaveBeenCalledWith({
+                email: 'test@example.com',
+                password: 'password123'
+            });
         });
 
         await waitFor(() => {
@@ -97,19 +79,12 @@ describe('Login Component', () => {
         });
     });
 
-    test('invalid login shows alert', async () => {
-        axios.post.mockRejectedValue(new Error('Login failed'));
-        // Mock setErrorMessage logic if it uses alert or state.
-        // Login.js uses setErrorMessage/setSuccessMessage for alerts? No, verify code.
-        // Alert was replaced by inline messages?
-        // Wait, Login.js implementation might still use alert or inline.
-        // Step 164 implies I didn't verify Login.js recent changes.
-        // I should verify Login.js implementation to be sure.
-        // Assuming it uses alert for now based on previous knowledge or check.
-
-        // Actually, let's assume it displays error message inline if modernized.
-        // If it uses alert, I need to spy on window.alert.
-        const alertMock = jest.spyOn(window, 'alert').mockImplementation(() => { });
+    test('invalid login shows error message', async () => {
+        userService.login.mockRejectedValue({
+            response: {
+                data: { message: 'Login failed' }
+            }
+        });
 
         renderWithRouter(<Login />);
 
@@ -122,17 +97,8 @@ describe('Login Component', () => {
         else fireEvent.click(screen.getByText(/^Log in$/i));
 
         await waitFor(() => {
-            // Check if alert was called OR error message displayed
-            // Ideally check both
-            try {
-                expect(alertMock).toHaveBeenCalled();
-            } catch (e) {
-                // If alert not called, maybe error message is shown?
-                // Use queryByText to check.
-            }
+            expect(screen.getByText(/Login failed/i)).toBeInTheDocument();
         });
-
-        alertMock.mockRestore();
     });
 
     test('google login button exists', () => {
