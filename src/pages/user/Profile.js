@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import Sidebar from "../../components/layout/Sidebar";
-import { Settings, Grid, Bookmark, User as UserIcon, Plus, Camera, MessageCircle, Link as LinkIcon, Music, Lock } from 'lucide-react';
+import { Settings, Grid, Bookmark, User as UserIcon, Camera, Link as LinkIcon, Music, Lock } from 'lucide-react';
 import userService from "../../services/userService";
+import songService from "../../services/songService";
 import "./css/Profile.css";
 
 function UserMenu() {
@@ -24,6 +24,9 @@ function UserMenu() {
   const [activeTab, setActiveTab] = useState("posts");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isChangePwdOpen, setIsChangePwdOpen] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [userSongs, setUserSongs] = useState([]);
+  const [songsLoading, setSongsLoading] = useState(false);
 
   // Change Password State
   const [pwdForm, setPwdForm] = useState({
@@ -70,11 +73,28 @@ function UserMenu() {
           isActive: (data.data || data).isActive ?? true,
           imagePreview: getImageUrl((data.data || data).imageUrl),
         });
+        setIsFollowing((data.data || data).isFollowed || false);
+
+        // Fetch Songs
+        fetchSongs();
 
       } catch (err) {
         console.error("Error fetching user:", err);
       } finally {
         setLoading(false);
+      }
+    };
+
+    const fetchSongs = async () => {
+      try {
+        setSongsLoading(true);
+        const response = await songService.getUserSongs(targetId);
+        const songList = response.data?.data?.content || response.data?.content || response.data || [];
+        setUserSongs(Array.isArray(songList) ? songList : []);
+      } catch (err) {
+        console.error("Error fetching user songs:", err);
+      } finally {
+        setSongsLoading(false);
       }
     };
 
@@ -189,6 +209,46 @@ function UserMenu() {
     }
   };
 
+  const handleFollowToggle = async () => {
+    if (!user || !targetId) return;
+
+    const originalFollowState = isFollowing;
+    setIsFollowing(!originalFollowState);
+
+    try {
+      if (originalFollowState) {
+        await userService.unfollowUser(targetId);
+      } else {
+        await userService.followUser(targetId);
+      }
+    } catch (err) {
+      console.error("Lỗi khi thay đổi trạng thái follow:", err);
+      setIsFollowing(originalFollowState);
+    }
+  };
+
+  const handleSongImageChange = async (songId, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setSongsLoading(true);
+      await songService.updateSongImage(songId, file);
+
+      // Refresh songs after update
+      const response = await songService.getUserSongs(targetId);
+      const songList = response.data?.data?.content || response.data?.content || response.data || [];
+      setUserSongs(Array.isArray(songList) ? songList : []);
+
+      alert("Cập nhật ảnh bài hát thành công!");
+    } catch (err) {
+      console.error("Lỗi cập nhật ảnh bài hát:", err);
+      alert("Cập nhật ảnh bài hát thất bại.");
+    } finally {
+      setSongsLoading(false);
+    }
+  };
+
   if (loading) return <div className="bg-black min-h-screen text-white flex items-center justify-center">Loading...</div>;
   if (!user) return <div className="bg-black min-h-screen text-white flex items-center justify-center">User not found</div>;
 
@@ -223,14 +283,25 @@ function UserMenu() {
               <div className="ig-user-row">
                 <h2 className="ig-username">{user.name}</h2>
                 <div className="ig-action-btns">
-                  <button className="ig-btn flex items-center gap-2" onClick={() => setIsEditModalOpen(true)}>
-                    <Settings className="w-4 h-4" />
-                    Edit Profile
-                  </button>
-                  <button className="ig-btn flex items-center gap-2" onClick={() => setIsChangePwdOpen(true)}>
-                    <Lock className="w-4 h-4" />
-                    Change Password
-                  </button>
+                  {targetId === storedIdUser ? (
+                    <>
+                      <button className="ig-btn flex items-center gap-2" onClick={() => setIsEditModalOpen(true)}>
+                        <Settings className="w-4 h-4" />
+                        Edit Profile
+                      </button>
+                      <button className="ig-btn flex items-center gap-2" onClick={() => setIsChangePwdOpen(true)}>
+                        <Lock className="w-4 h-4" />
+                        Change Password
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className={`ig-btn px-6 font-bold transition-all ${isFollowing ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white border-transparent' : 'bg-indigo-500 text-white border-transparent hover:bg-indigo-600'}`}
+                      onClick={handleFollowToggle}
+                    >
+                      {isFollowing ? 'Unfollow' : 'Follow'}
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -285,20 +356,66 @@ function UserMenu() {
 
           {/* Grid Content / Empty State */}
           {activeTab === 'posts' && (
-            <div className="ig-empty-state animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Music className="w-10 h-10 text-indigo-500" />
-              </div>
-              <div className="ig-empty-title">Share Your Music</div>
-              <div className="text-slate-500 max-w-sm mx-auto mb-8">
-                Your posts and music will appear here once you start sharing with the community.
-              </div>
-              <button
-                className="btn-primary px-8 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-500/25 hover:scale-105 transition-transform"
-                onClick={() => navigate('/')}
-              >
-                Create First Post
-              </button>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {songsLoading ? (
+                <div className="text-center py-20 opacity-50">Loading songs...</div>
+              ) : userSongs.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {userSongs.map(song => (
+                    <div key={song.id || song.idSong} className="song-card bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all group">
+                      <div className="relative aspect-square rounded-xl overflow-hidden mb-4">
+                        <img
+                          src={getImageUrl(song.imageUrl) || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=400"}
+                          alt={song.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Music className="w-8 h-8 text-white" />
+                          {targetId === storedIdUser && (
+                            <button
+                              className="absolute top-2 right-2 p-2 bg-white/20 hover:bg-white/40 rounded-full backdrop-blur-md transition-all"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                document.getElementById(`song-img-input-${song.id || song.idSong}`).click();
+                              }}
+                              title="Update Song Image"
+                            >
+                              <Camera className="w-4 h-4 text-white" />
+                            </button>
+                          )}
+                        </div>
+                        {targetId === storedIdUser && (
+                          <input
+                            type="file"
+                            id={`song-img-input-${song.id || song.idSong}`}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={(e) => handleSongImageChange(song.id || song.idSong, e)}
+                          />
+                        )}
+                      </div>
+                      <h4 className="font-bold truncate">{song.name}</h4>
+                      <p className="text-xs text-slate-500 truncate">{song.genre?.name || "Music"}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="ig-empty-state">
+                  <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Music className="w-10 h-10 text-indigo-500" />
+                  </div>
+                  <div className="ig-empty-title">Share Your Music</div>
+                  <div className="text-slate-500 max-w-sm mx-auto mb-8">
+                    Your posts and music will appear here once you start sharing with the community.
+                  </div>
+                  <button
+                    className="btn-primary px-8 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-500/25 hover:scale-105 transition-transform"
+                    onClick={() => navigate('/')}
+                  >
+                    Create First Post
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

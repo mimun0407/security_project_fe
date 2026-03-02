@@ -145,6 +145,35 @@ const userService = {
         const response = await axiosClient.post("/user/change-password", data);
         return response.data;
     },
+
+    /**
+     * Get user suggestions
+     * @returns {Promise<Array>} List of suggested users
+     */
+    getSuggestions: async () => {
+        const response = await axiosClient.get("/user/suggestions");
+        return response.data;
+    },
+
+    /**
+     * Follow a user
+     * @param {string} userId 
+     * @returns {Promise<Object>} Response data
+     */
+    followUser: async (userId) => {
+        const response = await axiosClient.post(`/follow-user/${userId}/follow`);
+        return response.data;
+    },
+
+    /**
+     * Unfollow a user
+     * @param {string} userId 
+     * @returns {Promise<Object>} Response data
+     */
+    unfollowUser: async (userId) => {
+        const response = await axiosClient.delete(`/follow-user/${userId}/unfollow`);
+        return response.data;
+    },
 };
 
 export default userService;

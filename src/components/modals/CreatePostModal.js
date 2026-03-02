@@ -3,6 +3,8 @@ import { X, Image as ImageIcon, Music, Loader2, UploadCloud, ChevronRight, Chevr
 import axiosClient from '../../services/axiosClient';
 import genreService from '../../services/genreService';
 import albumService from '../../services/albumService';
+import songService from '../../services/songService';
+import postService from '../../services/postService';
 import { useAuth } from '../../context/AuthContext';
 import './css/CreatePostModal.css';
 
@@ -100,16 +102,10 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
     setErrors({});
     setIsLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('musicUrl', selectedMusic);
-      formData.append('name', songName);
-      formData.append('genreId', genreId || "UNKNOWN"); // Use selected genreId
 
 
-      // Giả sử API /api/v1/song trả về metadata của song bao gồm ID
-      const response = await axiosClient.post('/song', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Sử dụng songService.uploadSong với query parameters như yêu cầu
+      const response = await songService.uploadSong(songName, genreId || "UNKNOWN", selectedMusic);
 
       const songData = response.data.data || response.data;
       setUploadedSong(songData);
@@ -168,23 +164,14 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
 
     setIsLoading(true);
     try {
-      const formData = new FormData();
-      const postDto = {
-        userId: user.idUser,
+      const postData = {
         content: content,
         visibility: visibility,
         targetType: 'SONG',
         targetId: uploadedSong.id || uploadedSong.idSong // ID từ Step 1
       };
 
-      formData.append('post', new Blob([JSON.stringify(postDto)], { type: "application/json" }));
-      if (selectedImage) {
-        formData.append('image', selectedImage);
-      }
-
-      await axiosClient.post('/posts', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await postService.createPost(postData, selectedImage);
 
       // Xóa draft này nếu đã post thành công (nếu draft có cùng song ID)
       const updatedDrafts = drafts.filter(d => (d.idSong || d.id) !== (uploadedSong.idSong || uploadedSong.id));

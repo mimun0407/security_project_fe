@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { Compass, Music, Film, Image as ImageIcon, TrendingUp, Heart, Play } from 'lucide-react';
+import { Music, Film, Image as ImageIcon } from 'lucide-react';
 import Sidebar from '../../components/layout/Sidebar';
 import RightSidebar from '../../components/layout/RightSidebar';
 import CreatePostModal from '../../components/modals/CreatePostModal';
+import { useAuth } from '../../context/AuthContext';
+import { useSuggestions } from '../../hooks/useSuggestions';
+import { usePlayer } from '../../context/PlayerContext';
 import './css/Explore.css';
 
 const MOCK_EXPLORE_DATA = [
@@ -17,27 +20,32 @@ const MOCK_EXPLORE_DATA = [
     { id: 'e9', type: 'image', title: 'Vintage Vibes', meta: '18k likes', image: 'https://images.unsplash.com/photo-1485579149621-0da62f02607e?q=80&w=800', height: '420px' }
 ];
 
-const MOCK_CURRENT_USER = {
-    name: 'Demo User',
-    username: 'demo@example.com',
-    avatar: "https://img.freepik.com/free-vector/smiling-young-man-illustration_1308-174669.jpg?w=360"
-};
-
-const MOCK_SUGGESTIONS = [
-    { id: 'u10', username: 'midnight_vibes', avatar: 'https://i.pravatar.cc/150?img=10', mutual: 'Gợi ý cho bạn', isFollowed: false },
-    { id: 'u11', username: 'traveler_beats', avatar: 'https://i.pravatar.cc/150?img=11', mutual: 'Gợi ý cho bạn', isFollowed: true },
-    { id: 'u12', username: 'urban_rhythm', avatar: 'https://i.pravatar.cc/150?img=12', mutual: 'Gợi ý cho bạn', isFollowed: false }
-];
+const IMAGE_BASE_URL = 'http://localhost:8080';
 
 const Explore = () => {
+    const { user } = useAuth();
+    const { suggestions, handleFollow } = useSuggestions();
+    const { playTrack } = usePlayer();
+
+    const currentUser = {
+        name: user?.name || "Người dùng",
+        username: user?.email || "",
+        avatar: user?.imageUrl ? `${IMAGE_BASE_URL}${user.imageUrl}` : "https://img.freepik.com/free-vector/smiling-young-man-illustration_1308-174669.jpg?w=360"
+    };
+
     const [activeTab, setActiveTab] = useState('all');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [suggestions, setSuggestions] = useState(MOCK_SUGGESTIONS);
 
-    const handleFollow = (targetId) => {
-        setSuggestions(prev => prev.map(u =>
-            u.id === targetId ? { ...u, isFollowed: !u.isFollowed } : u
-        ));
+    const handleItemClick = (item) => {
+        if (item.type === 'music') {
+            playTrack({
+                id: item.id,
+                title: item.title,
+                artist: "Explore Artist",
+                avatar: item.image,
+                url: "http://localhost:8080/api/v1/stream/demo.mp3" // Placeholder for demo
+            });
+        }
     };
 
     const renderItemIcon = (type) => {
@@ -73,7 +81,11 @@ const Explore = () => {
                     <div className="explore-content animate-slide-up">
                         <div className="explore-grid">
                             {MOCK_EXPLORE_DATA.map((item) => (
-                                <div key={item.id} className="explore-item">
+                                <div
+                                    key={item.id}
+                                    className="explore-item cursor-pointer"
+                                    onClick={() => handleItemClick(item)}
+                                >
                                     {item.badge && <div className="explore-badge">{item.badge}</div>}
                                     <img
                                         src={item.image}
@@ -96,7 +108,7 @@ const Explore = () => {
             </main>
 
             <RightSidebar
-                currentUser={MOCK_CURRENT_USER}
+                currentUser={currentUser}
                 suggestions={suggestions}
                 onFollow={handleFollow}
             />

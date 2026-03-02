@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import albumService from '../../services/albumService';
+import songService from '../../services/songService';
 import axiosClient from '../../services/axiosClient';
 import { useNavigate } from 'react-router-dom';
 import { getErrorMessage } from '../../utils/errorUtils';
@@ -139,7 +140,7 @@ const AlbumManagement = () => {
 
     const fetchAvailableSongs = async () => {
         try {
-            const res = await axiosClient.get('/song');
+            const res = await songService.getAllSongs();
             // Standardize: if res.data exists (axios), and has a .data property (backend structure)
             const songs = res.data?.data || res.data || [];
             setAvailableSongs(Array.isArray(songs) ? songs : []);

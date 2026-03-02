@@ -3,6 +3,9 @@ import { Heart, UserPlus, MessageSquare, AtSign, Music } from 'lucide-react';
 import Sidebar from '../../components/layout/Sidebar';
 import RightSidebar from '../../components/layout/RightSidebar';
 import CreatePostModal from '../../components/modals/CreatePostModal';
+import userService from '../../services/userService';
+import { useAuth } from '../../context/AuthContext';
+import { useSuggestions } from '../../hooks/useSuggestions';
 import './css/Notifications.css';
 
 const MOCK_NOTIFICATIONS = {
@@ -58,36 +61,55 @@ const MOCK_NOTIFICATIONS = {
     ]
 };
 
-const MOCK_CURRENT_USER = {
-    name: 'Demo User',
-    username: 'demo@example.com',
-    avatar: "https://img.freepik.com/free-vector/smiling-young-man-illustration_1308-174669.jpg?w=360"
-};
-
-const MOCK_SUGGESTIONS = [
-    { id: 'u20', username: 'producer_x', avatar: 'https://i.pravatar.cc/150?img=20', mutual: 'Gợi ý cho bạn', isFollowed: false },
-    { id: 'u21', username: 'vocal_queen', avatar: 'https://i.pravatar.cc/150?img=21', mutual: 'Gợi ý cho bạn', isFollowed: false }
-];
+const IMAGE_BASE_URL = 'http://localhost:8080';
 
 const Notifications = () => {
+    const { user } = useAuth();
+    const { suggestions, handleFollow: handleFollowSuggestion } = useSuggestions();
+
+    const currentUser = {
+        name: user?.name || "Người dùng",
+        username: user?.email || "",
+        avatar: user?.imageUrl ? `${IMAGE_BASE_URL}${user.imageUrl}` : "https://img.freepik.com/free-vector/smiling-young-man-illustration_1308-174669.jpg?w=360"
+    };
+
     const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [suggestions, setSuggestions] = useState(MOCK_SUGGESTIONS);
 
-    const handleToggleFollowNotification = (section, id) => {
+    const handleToggleFollowNotification = async (section, notificationId, userId) => {
+        const sectionItems = notifications[section];
+        const itemIndex = sectionItems.findIndex(n => n.id === notificationId);
+        if (itemIndex === -1) return;
+
+        const isCurrentlyFollowed = sectionItems[itemIndex].isFollowed;
+
+        // Optimistic UI update
         setNotifications(prev => {
             const updatedSection = prev[section].map(n =>
-                n.id === id ? { ...n, isFollowed: !n.isFollowed } : n
+                n.id === notificationId ? { ...n, isFollowed: !isCurrentlyFollowed } : n
             );
             return { ...prev, [section]: updatedSection };
         });
+
+        try {
+            if (isCurrentlyFollowed) {
+                await userService.unfollowUser(userId);
+            } else {
+                await userService.followUser(userId);
+            }
+        } catch (error) {
+            console.error("Lỗi khi thay đổi trạng thái follow từ thông báo:", error);
+            // Revert on error
+            setNotifications(prev => {
+                const updatedSection = prev[section].map(n =>
+                    n.id === notificationId ? { ...n, isFollowed: isCurrentlyFollowed } : n
+                );
+                return { ...prev, [section]: updatedSection };
+            });
+        }
     };
 
-    const handleFollowSuggestion = (targetId) => {
-        setSuggestions(prev => prev.map(u =>
-            u.id === targetId ? { ...u, isFollowed: !u.isFollowed } : u
-        ));
-    };
+    // handleFollowSuggestion is now provided by useSuggestions
 
     const renderIcon = (type) => {
         switch (type) {
@@ -112,7 +134,7 @@ const Notifications = () => {
                 <div className="notification-actions">
                     <button
                         className={item.isFollowed ? 'following-btn' : 'follow-btn'}
-                        onClick={() => handleToggleFollowNotification(section, item.id)}
+                        onClick={() => handleToggleFollowNotification(section, item.id, item.userId || item.user)}
                     >
                         {item.isFollowed ? 'Following' : 'Follow Base'}
                     </button>
@@ -157,7 +179,7 @@ const Notifications = () => {
             </main>
 
             <RightSidebar
-                currentUser={MOCK_CURRENT_USER}
+                currentUser={currentUser}
                 suggestions={suggestions}
                 onFollow={handleFollowSuggestion}
             />

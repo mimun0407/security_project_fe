@@ -61,3 +61,16 @@ body {
 .bg-secondary-theme {
     background-color: var(--btn-secondary-bg);
 }
+
+/* Player Bar Layout Adjustments */
+.has-player .ig-sidebar {
+    bottom: 110px !important;
+}
+
+.has-player main,
+.has-player .explore-main,
+.has-player .search-main,
+.has-player .feed-container,
+.has-player .ig-profile-container {
+    padding-bottom: 90px !important;
+}

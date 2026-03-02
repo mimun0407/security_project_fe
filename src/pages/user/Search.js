@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search as SearchIcon, X, Clock, User, Music, Disc, TrendingUp, ChevronRight } from 'lucide-react';
 import Sidebar from '../../components/layout/Sidebar';
 import RightSidebar from '../../components/layout/RightSidebar';
 import CreatePostModal from '../../components/modals/CreatePostModal';
+import { useAuth } from '../../context/AuthContext';
+import { useSuggestions } from '../../hooks/useSuggestions';
+import { usePlayer } from '../../context/PlayerContext';
 import './css/Search.css';
 
 const MOCK_RESULTS = {
@@ -30,23 +33,18 @@ const SUGGESTED = [
     { id: 't2', name: 'Lo-fi Beats', meta: 'Perfect for studying', type: 'trending', icon: <Music className="w-5 h-5" /> },
 ];
 
-const DEFAULT_AVATAR_URL = "https://img.freepik.com/free-vector/smiling-young-man-illustration_1308-174669.jpg?w=360";
-
-const MOCK_SUGGESTIONS = [
-    { id: 'u10', username: 'midnight_vibes', avatar: 'https://i.pravatar.cc/150?img=10', mutual: 'Gợi ý cho bạn', isFollowed: false },
-    { id: 'u11', username: 'traveler_beats', avatar: 'https://i.pravatar.cc/150?img=11', mutual: 'Gợi ý cho bạn', isFollowed: true },
-    { id: 'u12', username: 'urban_rhythm', avatar: 'https://i.pravatar.cc/150?img=12', mutual: 'Gợi ý cho bạn', isFollowed: false }
-];
-
-const MOCK_CURRENT_USER = {
-    name: 'Demo User',
-    username: 'demo@example.com',
-    avatar: DEFAULT_AVATAR_URL
-};
+const IMAGE_BASE_URL = 'http://localhost:8080';
 
 const Search = () => {
-    const [currentUser] = useState(MOCK_CURRENT_USER);
-    const [suggestions, setSuggestions] = useState(MOCK_SUGGESTIONS);
+    const { user } = useAuth();
+    const { suggestions, handleFollow } = useSuggestions();
+    const { playTrack } = usePlayer();
+
+    const currentUser = {
+        name: user?.name || "Người dùng",
+        username: user?.email || "",
+        avatar: user?.imageUrl ? `${IMAGE_BASE_URL}${user.imageUrl}` : "https://img.freepik.com/free-vector/smiling-young-man-illustration_1308-174669.jpg?w=360"
+    };
 
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState('all');
@@ -58,11 +56,7 @@ const Search = () => {
     ]);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-    const handleFollow = (targetId) => {
-        setSuggestions(prev => prev.map(u =>
-            u.id === targetId ? { ...u, isFollowed: !u.isFollowed } : u
-        ));
-    };
+    // handleFollow is now provided by useSuggestions
 
     // Debounce search
     useEffect(() => {
@@ -93,6 +87,18 @@ const Search = () => {
 
     const handleClearHistory = () => {
         setRecentSearches([]);
+    };
+
+    const handleResultClick = (item) => {
+        if (item.type === 'song') {
+            playTrack({
+                id: item.id,
+                title: item.name,
+                artist: item.meta.split('•')[0].trim(),
+                avatar: item.image,
+                url: "http://localhost:8080/api/v1/stream/demo.mp3" // Placeholder for demo
+            });
+        }
     };
 
     const renderResultIcon = (type) => {
@@ -198,7 +204,11 @@ const Search = () => {
                                 {results.length > 0 ? (
                                     <div className="results-grid">
                                         {results.map(item => (
-                                            <div key={item.id} className={`result-card type-${item.type}`}>
+                                            <div
+                                                key={item.id}
+                                                className={`result-card type-${item.type} cursor-pointer`}
+                                                onClick={() => handleResultClick(item)}
+                                            >
                                                 <div className="result-image-wrapper">
                                                     <img src={item.image} alt={item.name} className="result-image" />
                                                 </div>

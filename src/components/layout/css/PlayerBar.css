@@ -1,0 +1,221 @@
+/* PlayerBar.css */
+.player-bar-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 90px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1000;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.player-bar-content {
+    max-width: 1400px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+/* Track Info */
+.player-track-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 30%;
+    min-width: 180px;
+}
+
+.player-track-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.player-track-details {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.player-track-title {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.player-track-artist {
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+/* Controls */
+.player-controls-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 40%;
+    max-width: 600px;
+}
+
+.player-main-controls {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.player-control-btn {
+    color: white;
+    transition: all 0.2s;
+}
+
+.player-play-btn {
+    width: 35px;
+    height: 35px;
+    background: white;
+    color: black;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.player-play-btn:hover {
+    transform: scale(1.1);
+}
+
+.player-play-btn:active {
+    transform: scale(0.95);
+}
+
+.player-progress-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-time-label {
+    font-size: 11px;
+    opacity: 0.5;
+    min-width: 35px;
+}
+
+.player-progress-bar-wrapper {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+}
+
+.player-progress-slider {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.player-progress-fill {
+    height: 100%;
+    background: #6366f1;
+    /* Indigo-500 */
+    border-radius: 2px;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+/* Actions */
+.player-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 30%;
+    justify-content: flex-end;
+}
+
+.player-action-btn {
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.player-action-btn:hover {
+    opacity: 1;
+}
+
+.player-volume-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.player-volume-slider-popover {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 20, 20, 0.9);
+    backdrop-filter: blur(10px);
+    padding: 12px 8px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.player-volume-slider {
+    writing-mode: bt-lr;
+    /* Bottom to top */
+    -webkit-appearance: slider-vertical;
+    appearance: slider-vertical;
+    width: 8px;
+    height: 80px;
+}
+
+/* Animation */
+.animate-slide-up {
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .player-track-info {
+        width: auto;
+    }
+
+    .player-actions {
+        display: none;
+    }
+
+    .player-controls-wrapper {
+        width: auto;
+        flex: 1;
+    }
+}

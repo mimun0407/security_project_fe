@@ -5,6 +5,8 @@ import CreatePostModal from '../../components/modals/CreatePostModal';
 import Sidebar from '../../components/layout/Sidebar';
 import RightSidebar from '../../components/layout/RightSidebar';
 import { useAuth } from '../../context/AuthContext';
+import { useSuggestions } from '../../hooks/useSuggestions';
+import { usePlayer } from '../../context/PlayerContext';
 import './css/Feed.css';
 
 import { MOCK_POSTS, MOCK_STORIES } from '../../mocks/mockData';
@@ -15,9 +17,10 @@ const DEFAULT_AVATAR_URL = "https://img.freepik.com/free-vector/smiling-young-ma
 
 function NewFeed() {
   const [posts, setPosts] = useState(MOCK_POSTS);
-  const [suggestions, setSuggestions] = useState([]);
+  const { suggestions, handleFollow } = useSuggestions();
+  const { playTrack, currentTrack, isPlaying } = usePlayer();
 
-  const { user } = useAuth(); // Lấy user từ Context
+  const { user } = useAuth();
 
   // State lưu thông tin user hiện tại
   const [currentUser, setCurrentUser] = useState({
@@ -36,12 +39,6 @@ function NewFeed() {
     }
   }, [user]);
 
-  // State audio
-  const [playingPostId, setPlayingPostId] = useState(null);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
-  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   // State Modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -79,86 +76,24 @@ function NewFeed() {
     }
   }, []);
 
-  // --- 3. Fetch Suggestions ---
-  const fetchSuggestions = useCallback(async () => {
-    try {
-      const response = await axiosClient.get('/user/suggestions');
-      const data = response.data;
-      const mappedSuggestions = data.map((user) => ({
-        id: user.userId,
-        username: user.name || "Người dùng ẩn danh",
-        avatar: user.imageUrl ? `${IMAGE_BASE_URL}${user.imageUrl}` : DEFAULT_AVATAR_URL,
-        mutual: 'Gợi ý cho bạn',
-        isFollowed: false
-      }));
-      setSuggestions(mappedSuggestions);
-    } catch (error) {
-      console.error("Lỗi khi tải gợi ý:", error);
-    }
-  }, []);
+  // --- 3. Fetch Suggestions (Moved to hook) ---
 
-  // --- 4. Handle Follow ---
-  const handleFollow = async (targetId) => {
-    if (!targetId) return;
-    const userIndex = suggestions.findIndex(u => u.id === targetId);
-    if (userIndex === -1) return;
-    const isCurrentlyFollowed = suggestions[userIndex].isFollowed;
-    const newSuggestions = [...suggestions];
-    newSuggestions[userIndex].isFollowed = !isCurrentlyFollowed;
-    setSuggestions(newSuggestions);
-
-    try {
-      if (isCurrentlyFollowed) {
-        await axiosClient.delete(`/follow-user/${targetId}/unfollow`);
-      } else {
-        await axiosClient.post(`/follow-user/${targetId}/follow`);
-      }
-    } catch (error) {
-      console.error("Lỗi follow:", error);
-      newSuggestions[userIndex].isFollowed = isCurrentlyFollowed;
-      setSuggestions(newSuggestions);
-    }
-  };
+  // --- 4. Handle Follow (Moved to hook) ---
 
   useEffect(() => {
     fetchCurrentUser();
     fetchPosts();
-    fetchSuggestions();
-  }, [fetchCurrentUser, fetchPosts, fetchSuggestions]);
+  }, [fetchCurrentUser, fetchPosts]);
 
   // Helpers Audio/Like
-  const handlePlayMusic = (musicUrl, postId) => {
-    const audio = audioRef.current;
-    if (playingPostId === postId) {
-      audio.pause();
-      setPlayingPostId(null);
-    } else {
-      setCurrentTime(0);
-      audio.src = musicUrl;
-      audio.volume = volume;
-      audio.play();
-      setPlayingPostId(postId);
-    }
-  };
-
-  const handleAudioEnded = () => {
-    setPlayingPostId(null);
-    setCurrentTime(0);
-  };
-
-  const handleVolumeChange = (e) => {
-    const newVolume = parseFloat(e.target.value);
-    setVolume(newVolume);
-    if (audioRef.current) {
-      audioRef.current.volume = newVolume;
-    }
-  };
-
-  const formatTime = (time) => {
-    if (isNaN(time)) return "0:00";
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  const handlePlayMusic = (post) => {
+    playTrack({
+      id: post.id,
+      title: "Original Audio",
+      artist: post.username,
+      avatar: post.postImage,
+      url: post.musicLink
+    });
   };
 
   const toggleLike = (postId) => {
@@ -176,13 +111,6 @@ function NewFeed() {
   return (
     <div className="flex min-h-screen feed-container">
       <CreatePostModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onPostCreated={fetchPosts} />
-      <audio
-        ref={audioRef}
-        onEnded={handleAudioEnded}
-        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
-        className="hidden"
-      />
 
       {/* Left Sidebar */}
       <Sidebar onOpenCreateModal={() => setIsCreateModalOpen(true)} />
@@ -244,76 +172,21 @@ function NewFeed() {
                     <img
                       src={post.postImage}
                       alt="Post"
-                      className={`post-image ${playingPostId === post.id ? 'opacity-70 blur-[2px]' : ''}`}
+                      className={`post-image ${(currentTrack?.id === post.id && isPlaying) ? 'opacity-90 transition-all' : ''}`}
                       onDoubleClick={() => toggleLike(post.id)}
                     />
 
                     {post.musicLink && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); handlePlayMusic(post.musicLink, post.id); }}
-                        className={`absolute bottom-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-3 rounded-full transition-all border border-white/30 z-10 shadow-xl ${playingPostId === post.id ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`}
+                        onClick={(e) => { e.stopPropagation(); handlePlayMusic(post); }}
+                        className={`absolute bottom-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-3 rounded-full transition-all border border-white/30 z-10 shadow-xl ${(currentTrack?.id === post.id && isPlaying) ? 'bg-indigo-500 scale-110' : 'opacity-100 scale-100'}`}
                       >
-                        <Play className="w-6 h-6 fill-white ml-0.5" />
+                        {(currentTrack?.id === post.id && isPlaying) ? (
+                          <Pause className="w-6 h-6 fill-white" />
+                        ) : (
+                          <Play className="w-6 h-6 fill-white ml-0.5" />
+                        )}
                       </button>
-                    )}
-
-                    {playingPostId === post.id && (
-                      <div className="absolute inset-0 flex flex-col justify-between audio-overlay z-20 animate-in fade-in duration-500">
-                        <div className="flex-1 flex items-center justify-center">
-                          <button
-                            onClick={() => handlePlayMusic(post.musicLink, post.id)}
-                            className="bg-white/10 hover:bg-white/20 backdrop-blur-xl text-white p-6 rounded-full transition-all border border-white/20 shadow-2xl hover:scale-110 active:scale-95"
-                          >
-                            <Pause className="w-10 h-10 fill-white" />
-                          </button>
-                        </div>
-
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3 text-white text-[11px] font-bold tracking-tighter">
-                            <span className="w-8 opacity-70">{formatTime(currentTime)}</span>
-                            <div
-                              className="flex-1 audio-progress-bar overflow-hidden relative"
-                              onClick={(e) => {
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                const x = e.clientX - rect.left;
-                                const clickedTime = (x / rect.width) * duration;
-                                audioRef.current.currentTime = clickedTime;
-                              }}
-                            >
-                              <div className="audio-progress-fill" style={{ width: `${(currentTime / duration) * 100}%` }}></div>
-                            </div>
-                            <span className="w-8 opacity-70">{formatTime(duration)}</span>
-
-                            <div className="relative">
-                              <button
-                                onClick={() => setShowVolumeSlider(!showVolumeSlider)}
-                                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
-                              >
-                                {volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                              </button>
-                              {showVolumeSlider && (
-                                <div className="absolute bottom-full right-0 mb-3 bg-black/80 backdrop-blur-xl rounded-2xl p-3 border border-white/10 shadow-2xl animate-in zoom-in-95 duration-200">
-                                  <div className="relative h-32 w-8 flex items-center justify-center">
-                                    <input
-                                      type="range"
-                                      min="0"
-                                      max="1"
-                                      step="0.01"
-                                      value={volume}
-                                      onChange={handleVolumeChange}
-                                      orient="vertical"
-                                      className="absolute opacity-0 cursor-pointer h-full w-full z-10"
-                                    />
-                                    <div className="w-1.5 h-full bg-white/20 rounded-full overflow-hidden relative">
-                                      <div className="absolute bottom-0 left-0 right-0 bg-white rounded-full translate-y-0" style={{ height: `${volume * 100}%` }}></div>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
                     )}
                   </div>
 
