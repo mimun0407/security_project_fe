@@ -28,7 +28,7 @@ const songService = {
      */
     uploadSong: async (name, genreId, musicFile) => {
         const formData = new FormData();
-        formData.append('musicUrl', musicFile);
+        formData.append('file', musicFile);
 
         // Note: Query parameters name and genreId are sent as requested
         return axiosClient.post(`/song?name=${encodeURIComponent(name)}&genreId=${encodeURIComponent(genreId)}`, formData, {
