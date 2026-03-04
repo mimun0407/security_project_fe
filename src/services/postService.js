@@ -82,6 +82,15 @@ const postService = {
      */
     getUserPosts: async (userId, page = 0, size = 10, sort = 'createdAt,desc') => {
         return axiosClient.get(`/posts/user/${userId}?page=${page}&size=${size}&sort=${sort}`);
+    },
+
+    /**
+     * Get details of a specific post
+     * @param {string} postId 
+     * @returns {Promise}
+     */
+    getPostById: async (postId) => {
+        return axiosClient.get(`/posts/post/${postId}`);
     }
 };
 

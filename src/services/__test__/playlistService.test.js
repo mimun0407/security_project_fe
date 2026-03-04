@@ -41,4 +41,15 @@ describe('playlistService', () => {
         });
         expect(result).toEqual(mockData);
     });
+
+    test('getPlaylistSongs should call GET with correct playlistId', async () => {
+        const playlistId = 'plist123';
+        const mockData = { data: { songs: [], count: 0 } };
+        axiosClient.get.mockResolvedValueOnce(mockData);
+
+        const result = await playlistService.getPlaylistSongs(playlistId);
+
+        expect(axiosClient.get).toHaveBeenCalledWith(`/playlist/${playlistId}/songs`);
+        expect(result).toEqual(mockData);
+    });
 });

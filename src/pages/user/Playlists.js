@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/layout/Sidebar';
-import { Plus, Music, MoreVertical, Play, Trash2, Edit2, Search as SearchIcon } from 'lucide-react';
+import { Plus, Music, MoreVertical, Play, Trash2, Edit2, Search as SearchIcon, X } from 'lucide-react';
 import playlistService from '../../services/playlistService';
 import './css/Playlists.css';
 
@@ -10,6 +10,9 @@ const Playlists = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newPlaylist, setNewPlaylist] = useState({ name: '', description: '' });
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+    const [songs, setSongs] = useState([]);
+    const [songsLoading, setSongsLoading] = useState(false);
 
     useEffect(() => {
         fetchPlaylists();
@@ -26,6 +29,25 @@ const Playlists = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const fetchPlaylistSongs = async (playlistId) => {
+        try {
+            setSongsLoading(true);
+            const response = await playlistService.getPlaylistSongs(playlistId);
+            const data = response.data?.data || response.data || [];
+            setSongs(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error("Error fetching playlist songs:", error);
+            setSongs([]);
+        } finally {
+            setSongsLoading(false);
+        }
+    };
+
+    const handleViewPlaylist = (playlist) => {
+        setSelectedPlaylist(playlist);
+        fetchPlaylistSongs(playlist.id || playlist.idPlaylist);
     };
 
     const handleCreatePlaylist = async (e) => {
@@ -88,26 +110,30 @@ const Playlists = () => {
                         <div className="col-span-full py-20 text-center opacity-50">Loading your music...</div>
                     ) : filteredPlaylists.length > 0 ? (
                         filteredPlaylists.map(playlist => (
-                            <div key={playlist.id || playlist.idPlaylist} className="playlist-card group">
+                            <div
+                                key={playlist.id || playlist.idPlaylist}
+                                className="playlist-card group cursor-pointer"
+                                onClick={() => handleViewPlaylist(playlist)}
+                            >
                                 <div className="playlist-cover relative">
                                     <div className="playlist-cover-placeholder">
                                         <Music className="w-12 h-12 opacity-20" />
                                     </div>
                                     <div className="playlist-overlay opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                        <button className="play-btn-circle">
+                                        <button className="play-btn-circle" onClick={(e) => e.stopPropagation()}>
                                             <Play className="fill-white w-6 h-6 ml-1" />
                                         </button>
                                     </div>
                                 </div>
                                 <div className="playlist-info">
                                     <div className="flex justify-between items-start">
-                                        <div>
+                                        <div className="flex-1 min-w-0 pr-2">
                                             <h3 className="font-bold text-lg truncate mb-1">{playlist.name}</h3>
                                             <p className="text-xs opacity-50 line-clamp-2 min-h-[32px]">
                                                 {playlist.description || "No description provided."}
                                             </p>
                                         </div>
-                                        <button className="p-1 hover:bg-white/10 rounded-full transition">
+                                        <button className="p-1 hover:bg-white/10 rounded-full transition" onClick={(e) => e.stopPropagation()}>
                                             <MoreVertical className="w-4 h-4 opacity-50" />
                                         </button>
                                     </div>
@@ -137,6 +163,76 @@ const Playlists = () => {
                     )}
                 </div>
             </main>
+
+            {/* Playlist Detail Modal */}
+            {selectedPlaylist && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 modal-overlay" onClick={() => setSelectedPlaylist(null)}>
+                    <div className="playlist-detail-modal animate-in fade-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-start mb-8">
+                            <div className="flex gap-6 items-center">
+                                <div className="detail-cover-placeholder">
+                                    <Music className="w-10 h-10 opacity-30" />
+                                </div>
+                                <div>
+                                    <h2 className="text-3xl font-bold mb-2">{selectedPlaylist.name}</h2>
+                                    <p className="text-sm opacity-60 max-w-md">{selectedPlaylist.description || "No description provided."}</p>
+                                    <div className="flex gap-4 mt-4 text-xs font-bold uppercase tracking-widest opacity-40">
+                                        <span>{songs.length} Tracks</span>
+                                        <span>•</span>
+                                        <span>Curated by you</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button onClick={() => setSelectedPlaylist(null)} className="p-2 hover:bg-white/10 rounded-full transition">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="songs-list-container custom-scrollbar">
+                            {songsLoading ? (
+                                <div className="text-center py-20 opacity-40">Fetching songs...</div>
+                            ) : songs.length > 0 ? (
+                                <div className="songs-table">
+                                    <div className="songs-header grid grid-cols-[40px_1fr_1fr_1fr] px-4 py-2 border-b border-white/5 text-[10px] uppercase font-bold tracking-wider opacity-40">
+                                        <span>#</span>
+                                        <span>Title</span>
+                                        <span>Artist</span>
+                                        <span>Album / Group</span>
+                                    </div>
+                                    <div className="songs-body py-2">
+                                        {songs.map((song, index) => (
+                                            <div key={song.id || song.idSong} className="song-row grid grid-cols-[40px_1fr_1fr_1fr] px-4 py-3 hover:bg-white/5 rounded-xl transition group">
+                                                <div className="flex items-center text-sm opacity-40 group-hover:hidden">{index + 1}</div>
+                                                <div className="hidden items-center group-hover:flex">
+                                                    <Play className="w-3 h-3 fill-indigo-500 text-indigo-500" />
+                                                </div>
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
+                                                        {song.imageUrl ? <img src={song.imageUrl} alt="" className="w-full h-full object-cover rounded-lg" /> : <Music className="w-4 h-4 opacity-20" />}
+                                                    </div>
+                                                    <span className="font-bold truncate text-sm">{song.name}</span>
+                                                </div>
+                                                <div className="flex items-center text-sm opacity-60 truncate pr-2">
+                                                    {song.user?.name || song.artistName || "Unknown Artist"}
+                                                </div>
+                                                <div className="flex items-center text-sm opacity-40 truncate pr-2 italic">
+                                                    {song.group?.name || song.albumName || "Singles"}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center py-20 bg-white/5 rounded-3xl border border-dashed border-white/10">
+                                    <Music className="w-12 h-12 mx-auto mb-4 opacity-10" />
+                                    <h3 className="text-lg font-bold opacity-40">This playlist is empty</h3>
+                                    <p className="text-sm opacity-30 mt-1">Start adding songs from the home feed or search!</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Create Playlist Modal */}
             {showCreateModal && (

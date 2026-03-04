@@ -33,6 +33,15 @@ const playlistService = {
             songId: String(songId),
             playListId: String(playlistId)
         });
+    },
+
+    /**
+     * Get songs in a specific playlist
+     * @param {string|number} playlistId 
+     * @returns {Promise}
+     */
+    getPlaylistSongs: async (playlistId) => {
+        return axiosClient.get(`/playlist/${playlistId}/songs`);
     }
 };
 

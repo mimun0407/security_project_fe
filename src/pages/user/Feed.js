@@ -4,6 +4,8 @@ import { Play, Pause, Music, Volume2, VolumeX, Heart, MessageCircle } from 'luci
 import axiosClient from '../../services/axiosClient';
 import CreatePostModal from '../../components/modals/CreatePostModal';
 import SharePostModal from '../../components/modals/SharePostModal';
+import CommentSection from '../../components/content/CommentSection';
+import PostDetailModal from '../../components/modals/PostDetailModal';
 import Sidebar from '../../components/layout/Sidebar';
 import RightSidebar from '../../components/layout/RightSidebar';
 import { useAuth } from '../../context/AuthContext';
@@ -48,6 +50,9 @@ function NewFeed() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [postToShare, setPostToShare] = useState(null);
+  const [expandedComments, setExpandedComments] = useState({}); // { postId: boolean }
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedPostIdDetail, setSelectedPostIdDetail] = useState(null);
 
   const audioRef = useRef(null);
 
@@ -151,6 +156,16 @@ function NewFeed() {
         }}
       />
 
+      <PostDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        postId={selectedPostIdDetail}
+        onUpdate={(postId, updates) => {
+          // Sync updates to the feed list if needed
+          setPosts(prev => prev.map(p => p.id === postId ? { ...p, ...updates } : p));
+        }}
+      />
+
       {/* Left Sidebar */}
       <Sidebar onOpenCreateModal={() => setIsCreateModalOpen(true)} />
 
@@ -181,9 +196,9 @@ function NewFeed() {
             ) : (
               posts.map(post => (
                 <article key={post.id} className="post-article">
-                  <div className="post-header">
+                  <div className="post-header cursor-pointer" onClick={() => { setSelectedPostIdDetail(post.id); setIsDetailModalOpen(true); }}>
                     <div className="flex items-center gap-3">
-                      <div className="relative cursor-pointer" onClick={() => handleProfileClick(post.authorId)}>
+                      <div className="relative cursor-pointer" onClick={(e) => { e.stopPropagation(); handleProfileClick(post.authorId); }}>
                         <img
                           src={post.userAvatar}
                           alt={post.username}
@@ -192,7 +207,7 @@ function NewFeed() {
                         />
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
                       </div>
-                      <div className="flex flex-col cursor-pointer" onClick={() => handleProfileClick(post.authorId)}>
+                      <div className="flex flex-col cursor-pointer" onClick={(e) => { e.stopPropagation(); handleProfileClick(post.authorId); }}>
                         <span className="username">{post.username}</span>
                         {post.musicLink && (
                           <div className="flex items-center music-info">
@@ -207,7 +222,7 @@ function NewFeed() {
                     </button>
                   </div>
 
-                  <div className="post-media-container group">
+                  <div className="post-media-container group cursor-pointer" onClick={() => { setSelectedPostIdDetail(post.id); setIsDetailModalOpen(true); }}>
                     <img
                       src={post.postImage}
                       alt="Post"
@@ -236,7 +251,10 @@ function NewFeed() {
                           className={`w-7 h-7 cursor-pointer hover:scale-125 transition-all duration-300 ${post.isLiked ? 'fill-red-500 text-red-500' : 'text-slate-500 hover:text-red-500'}`}
                           onClick={() => toggleLike(post.id)}
                         />
-                        <MessageCircle className="w-7 h-7 cursor-pointer text-slate-500 hover:text-indigo-500 transition-colors" />
+                        <MessageCircle
+                          className={`w-7 h-7 cursor-pointer transition-colors ${expandedComments[post.id] ? 'text-indigo-500' : 'text-slate-500 hover:text-indigo-500'}`}
+                          onClick={() => setExpandedComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                        />
                         <svg
                           onClick={() => {
                             setPostToShare(post);
@@ -263,8 +281,15 @@ function NewFeed() {
                       <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0">
                         <img src={currentUser.avatar} alt="Me" className="w-full h-full object-cover" />
                       </div>
-                      <input type="text" placeholder="Add a comment..." className="comment-input" />
+                      <input type="text" placeholder="Add a comment..." className="comment-input" onClick={() => setExpandedComments(prev => ({ ...prev, [post.id]: true }))} readOnly />
                     </div>
+
+                    {expandedComments[post.id] && (
+                      <CommentSection
+                        postId={post.id}
+                        onClose={() => setExpandedComments(prev => ({ ...prev, [post.id]: false }))}
+                      />
+                    )}
                   </div>
                 </article>
               ))

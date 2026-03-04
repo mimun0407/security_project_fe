@@ -1,15 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/layout/Sidebar";
 import { Settings, Grid, Bookmark, User as UserIcon, Camera, Link as LinkIcon, Music, Lock, ListMusic, Edit2, Check, X, Heart } from 'lucide-react';
 import userService from "../../services/userService";
 import postService from "../../services/postService";
 import AddToPlaylistModal from "../../components/modals/AddToPlaylistModal";
+import CreatePostModal from '../../components/modals/CreatePostModal';
+import SharePostModal from '../../components/modals/SharePostModal';
+import PostDetailModal from '../../components/modals/PostDetailModal';
 import "./css/Profile.css";
 import { getUserAvatar } from "../../utils/userUtils";
 import { useAuth } from "../../context/AuthContext";
 
-function UserMenu() {
+function Profile() {
   const params = useParams();
   const { user: currentUserData, updateUser } = useAuth();
   const navigate = useNavigate();
@@ -33,6 +36,13 @@ function UserMenu() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+
+  // Modals for posts
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [postToShare, setPostToShare] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedPostIdDetail, setSelectedPostIdDetail] = useState(null);
 
   // Playlist Modal State
   const [playlistModal, setPlaylistModal] = useState({
@@ -75,37 +85,28 @@ function UserMenu() {
 
     const fetchUser = async () => {
       try {
-        // We now consistently use numeric IDs for all profile fetches
         const response = await userService.getUserById(targetId);
-
         const userData = response.data || response;
         setUser(userData);
 
-        // Lấy ID thật sự từ response để gọi các API khác
         const realId = userData.userId || userData.idUser || userData.id;
-
-        // Nếu store đang lưu email mà ta đã có ID thật, cập nhật lại store qua AuthContext
-        // Hoặc đơn giản là sync name/imageUrl nếu đang xem profile của chính mình
-        const isOwnProfile = String(realId) === String(storedIdUser) ||
+        const isOwn = String(realId) === String(storedIdUser) ||
           String(targetId) === String(storedIdUser) ||
           userData.email === localStorage.getItem("email");
 
-        // Set state to indicate if viewing own profile
-        setIsOwnProfile(isOwnProfile);
+        setIsOwnProfile(isOwn);
 
-        if (realId && isOwnProfile) {
+        if (realId && isOwn) {
           updateUser({
             idUser: realId,
             name: userData.name,
             imageUrl: userData.imageUrl
           });
-          // Cập nhật lại localStorage
           localStorage.setItem("idUser", realId);
           if (userData.name) localStorage.setItem("name", userData.name);
           if (userData.imageUrl) localStorage.setItem("imageUrl", userData.imageUrl);
         }
 
-        // Init form
         setForm({
           name: userData.name || "",
           email: userData.email || "",
@@ -117,8 +118,6 @@ function UserMenu() {
         // Fetch user stats
         try {
           const statsResponse = await userService.getUserStats(realId || targetId);
-          // Assuming response structure has { postCount, followerCount, followingCount, isFollowing }
-          // If it's wrapped in `data` or `result`, handle safely
           const rawStats = statsResponse.data || statsResponse;
           setStats({
             postCount: rawStats.postCount || 0,
@@ -126,15 +125,13 @@ function UserMenu() {
             followingCount: rawStats.followingCount || 0
           });
 
-          // Also sync the `isFollowing` state with the stats API logic if provided
-          if (rawStats.hasOwnProperty('isFollowing') && !isOwnProfile) {
+          if (rawStats.hasOwnProperty('isFollowing') && !isOwn) {
             setIsFollowing(rawStats.isFollowing);
           }
         } catch (statsErr) {
           console.error("Error fetching user stats:", statsErr);
         }
 
-        // Fetch Posts with realId or fallback to targetId
         fetchPosts(realId || targetId);
 
       } catch (err) {
@@ -158,11 +155,8 @@ function UserMenu() {
     };
 
     fetchUser();
-  }, [targetId, navigate, storedIdUser, currentUserData?.email]);
+  }, [targetId, navigate, storedIdUser, currentUserData?.email, updateUser]);
 
-
-
-  // Edit Handlers
   const handleAvatarUpdate = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -170,8 +164,6 @@ function UserMenu() {
     try {
       setLoading(true);
       await userService.updateImage(file);
-
-      // Refresh user data
       const realId = user.userId || user.idUser || user.id || targetId;
       const updatedResponse = await userService.getUserById(realId);
       const updatedUser = updatedResponse.data || updatedResponse;
@@ -204,8 +196,6 @@ function UserMenu() {
     try {
       setLoading(true);
       await userService.updateName(tempName.trim());
-
-      // Refresh user data
       const realId = user.userId || user.idUser || user.id || targetId;
       const updatedResponse = await userService.getUserById(realId);
       const updatedUser = updatedResponse.data || updatedResponse;
@@ -228,10 +218,6 @@ function UserMenu() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleFileChange = (e) => {
-    handleAvatarUpdate(e);
   };
 
   const handleChangePassword = async (e) => {
@@ -288,10 +274,8 @@ function UserMenu() {
 
   const handleFollowToggle = async () => {
     if (!user || !targetId) return;
-
     const originalFollowState = isFollowing;
     setIsFollowing(!originalFollowState);
-
     try {
       if (originalFollowState) {
         await userService.unfollowUser(targetId);
@@ -309,10 +293,7 @@ function UserMenu() {
 
   return (
     <div className="ig-profile-container">
-      {/* 1. Sidebar */}
       <Sidebar />
-
-      {/* 2. Main Content */}
       <main className="ig-profile-main ml-[120px] transition-all duration-300">
         <div className="profile-cover-container">
           <img
@@ -324,15 +305,14 @@ function UserMenu() {
         </div>
 
         <div className="ig-profile-wrapper">
-          {/* Header Section */}
           <div className="profile-header-meta">
-            <div className={`ig-avatar-wrapper ${targetId === storedIdUser ? 'editable' : ''}`} onClick={() => targetId === storedIdUser && document.getElementById('avatar-upload-input').click()}>
+            <div className={`ig-avatar-wrapper ${isOwnProfile ? 'editable' : ''}`} onClick={() => isOwnProfile && document.getElementById('avatar-upload-input').click()}>
               <img
                 src={getUserAvatar(user.imageUrl)}
                 alt={user.name}
                 className="ig-avatar-img"
               />
-              {targetId === storedIdUser && (
+              {isOwnProfile && (
                 <div className="avatar-edit-overlay">
                   <Camera className="w-8 h-8 text-white" />
                 </div>
@@ -369,7 +349,7 @@ function UserMenu() {
                   ) : (
                     <div className="flex items-center gap-3">
                       <h2 className="ig-username">{user.name}</h2>
-                      {targetId === storedIdUser && (
+                      {isOwnProfile && (
                         <button
                           className="ig-edit-name-btn"
                           onClick={() => {
@@ -385,12 +365,10 @@ function UserMenu() {
                 </div>
                 <div className="ig-action-btns">
                   {isOwnProfile ? (
-                    <>
-                      <button className="ig-btn flex items-center gap-2" onClick={() => setIsChangePwdOpen(true)}>
-                        <Lock className="w-4 h-4" />
-                        Change Password
-                      </button>
-                    </>
+                    <button className="ig-btn flex items-center gap-2" onClick={() => setIsChangePwdOpen(true)}>
+                      <Lock className="w-4 h-4" />
+                      Change Password
+                    </button>
                   ) : (
                     <button
                       className={`ig-btn px-6 font-bold transition-all ${isFollowing ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white border-transparent' : 'bg-indigo-500 text-white border-transparent hover:bg-indigo-600'}`}
@@ -411,7 +389,6 @@ function UserMenu() {
             </div>
           </div>
 
-          {/* Stats Card */}
           <div className="stats-card">
             <div className="ig-stat-item">
               <span className="ig-stat-count">{stats.postCount}</span>
@@ -429,29 +406,18 @@ function UserMenu() {
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="ig-tabs">
-            <div
-              className={`ig-tab ${activeTab === 'posts' ? 'active' : ''}`}
-              onClick={() => setActiveTab('posts')}
-            >
+            <div className={`ig-tab ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}>
               <Grid className="w-4 h-4" /> POSTS
             </div>
-            <div
-              className={`ig-tab ${activeTab === 'saved' ? 'active' : ''}`}
-              onClick={() => setActiveTab('saved')}
-            >
+            <div className={`ig-tab ${activeTab === 'saved' ? 'active' : ''}`} onClick={() => setActiveTab('saved')}>
               <Bookmark className="w-4 h-4" /> SAVED
             </div>
-            <div
-              className={`ig-tab ${activeTab === 'tagged' ? 'active' : ''}`}
-              onClick={() => setActiveTab('tagged')}
-            >
+            <div className={`ig-tab ${activeTab === 'tagged' ? 'active' : ''}`} onClick={() => setActiveTab('tagged')}>
               <UserIcon className="w-4 h-4" /> TAGGED
             </div>
           </div>
 
-          {/* Grid Content / Empty State */}
           {activeTab === 'posts' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               {postsLoading ? (
@@ -459,7 +425,11 @@ function UserMenu() {
               ) : userPosts.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {userPosts.map(post => (
-                    <div key={post.id} className="post-card bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all group overflow-hidden">
+                    <div
+                      key={post.id}
+                      className="post-card bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all group overflow-hidden cursor-pointer"
+                      onClick={() => { setSelectedPostIdDetail(post.id); setIsDetailModalOpen(true); }}
+                    >
                       {post.imageUrl && (
                         <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-4">
                           <img
@@ -470,13 +440,11 @@ function UserMenu() {
                         </div>
                       )}
                       <p className="text-sm font-medium line-clamp-3 mb-2">{post.content}</p>
-
                       {post.originalPostId && (
                         <div className="text-xs text-indigo-500 flex items-center gap-1 mt-2 font-bold bg-indigo-50 dark:bg-indigo-900/30 w-max px-2 py-1 rounded-md">
                           <LinkIcon className="w-3 h-3" /> Shared Post
                         </div>
                       )}
-
                       <div className="flex items-center justify-between text-[10px] text-slate-400 mt-3 uppercase tracking-wider font-bold opacity-70">
                         <span>{new Date(post.createdAt || Date.now()).toLocaleDateString()} • {post.visibility || 'PUBLIC'}</span>
                         <div className="flex items-center gap-1 text-red-500/80">
@@ -518,9 +486,6 @@ function UserMenu() {
         </div>
       </main>
 
-
-
-      {/* Change Password Modal */}
       {isChangePwdOpen && (
         <div className="ig-modal-overlay" onClick={() => setIsChangePwdOpen(false)}>
           <div className="edit-profile-card" onClick={e => e.stopPropagation()}>
@@ -540,7 +505,6 @@ function UserMenu() {
                 />
                 {pwdErrors.oldPassword && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">{pwdErrors.oldPassword}</p>}
               </div>
-
               <div className="edit-form-group">
                 <label className="edit-label">New Password</label>
                 <input
@@ -555,7 +519,6 @@ function UserMenu() {
                 />
                 {pwdErrors.newPassword && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">{pwdErrors.newPassword}</p>}
               </div>
-
               <div className="edit-form-group">
                 <label className="edit-label">Confirm New Password</label>
                 <input
@@ -570,37 +533,32 @@ function UserMenu() {
                 />
                 {pwdErrors.confirmPassword && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">{pwdErrors.confirmPassword}</p>}
               </div>
-
               <div className="edit-actions">
-                <button
-                  type="button"
-                  onClick={() => setIsChangePwdOpen(false)}
-                  className="btn-cancel"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-save"
-                >
-                  {loading ? "Processing..." : "Update Password"}
-                </button>
+                <button type="button" onClick={() => setIsChangePwdOpen(false)} className="btn-cancel">Cancel</button>
+                <button type="submit" disabled={loading} className="btn-save">{loading ? "Processing..." : "Update Password"}</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Add to Playlist Modal */}
       <AddToPlaylistModal
         isOpen={playlistModal.isOpen}
         onClose={() => setPlaylistModal({ ...playlistModal, isOpen: false })}
         songId={playlistModal.songId}
         songName={playlistModal.songName}
       />
+
+      <PostDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        postId={selectedPostIdDetail}
+        onUpdate={(postId, updates) => {
+          setUserPosts(prev => prev.map(p => p.id === postId ? { ...p, ...updates } : p));
+        }}
+      />
     </div>
   );
 }
 
-export default UserMenu;
+export default Profile;

@@ -120,4 +120,15 @@ describe('postService', () => {
         expect(axiosClient.get).toHaveBeenCalledWith('/posts/user/123?page=0&size=10&sort=createdAt,desc');
         expect(result).toEqual(mockData);
     });
+
+    // --- GET POST BY ID ---
+    test('getPostById should call the /posts/post/{postId} endpoint', async () => {
+        const mockData = { data: { id: "post123", content: "Detailed Post" } };
+        axiosClient.get.mockResolvedValue(mockData);
+
+        const result = await postService.getPostById("post123");
+
+        expect(axiosClient.get).toHaveBeenCalledWith('/posts/post/post123');
+        expect(result).toEqual(mockData);
+    });
 });
