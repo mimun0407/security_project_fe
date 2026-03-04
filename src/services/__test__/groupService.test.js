@@ -45,6 +45,46 @@ describe('groupService', () => {
         expect(result).toEqual(mockData.data);
     });
 
+    test('leaveGroup should call the leave endpoint', async () => {
+        const mockData = { data: { message: "Successfully left group" } };
+        axiosClient.delete.mockResolvedValue(mockData);
+
+        const result = await groupService.leaveGroup(123);
+
+        expect(axiosClient.delete).toHaveBeenCalledWith('/groups/123/leave');
+        expect(result).toEqual(mockData.data);
+    });
+
+    test('banUser should call the bans endpoint', async () => {
+        const mockData = { data: { message: "Successfully banned user" } };
+        axiosClient.post.mockResolvedValue(mockData);
+
+        const result = await groupService.banUser(123, 456);
+
+        expect(axiosClient.post).toHaveBeenCalledWith('/groups/123/bans/456');
+        expect(result).toEqual(mockData.data);
+    });
+
+    test('unbanUser should call the delete endpoint for bans', async () => {
+        const mockData = { data: { message: "Successfully unbanned user" } };
+        axiosClient.delete.mockResolvedValue(mockData);
+
+        const result = await groupService.unbanUser(123, 456);
+
+        expect(axiosClient.delete).toHaveBeenCalledWith('/groups/123/bans/456');
+        expect(result).toEqual(mockData.data);
+    });
+
+    test('getUserGroups should call the user groups endpoint', async () => {
+        const mockData = { data: [{ id: 1, name: "Test Group" }] };
+        axiosClient.get.mockResolvedValue(mockData);
+
+        const result = await groupService.getUserGroups(123);
+
+        expect(axiosClient.get).toHaveBeenCalledWith('/groups/user/123');
+        expect(result).toEqual(mockData.data);
+    });
+
     test('togglePrivateGroup should call the toggle-private endpoint', async () => {
         const mockData = { data: { message: "Privacy toggled" } };
         axiosClient.put.mockResolvedValue(mockData);

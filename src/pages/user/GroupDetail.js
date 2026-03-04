@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/layout/Sidebar';
 import {
@@ -22,6 +22,9 @@ const GroupDetail = () => {
     const [isJoining, setIsJoining] = useState(false);
     const [joinMessage, setJoinMessage] = useState('');
     const [joinError, setJoinError] = useState('');
+    const [isLeaving, setIsLeaving] = useState(false);
+    const [leaveMessage, setLeaveMessage] = useState('');
+    const [leaveError, setLeaveError] = useState('');
     const [isTogglingPrivacy, setIsTogglingPrivacy] = useState(false);
     const [privacyMessage, setPrivacyMessage] = useState('');
     const [privacyError, setPrivacyError] = useState('');
@@ -32,13 +35,20 @@ const GroupDetail = () => {
     const [isReviewing, setIsReviewing] = useState(false);
     const [reviewMessage, setReviewMessage] = useState('');
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-    const [postToShare, setPostToShare] = useState(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [postToShare, setPostToShare] = useState(null);
+
+    // Ban User states
+    const [isBanning, setIsBanning] = useState(false);
+    const [banningUserId, setBanningUserId] = useState(null);
+    const [banMessage, setBanMessage] = useState('');
 
     const handleJoinGroup = async () => {
         setIsJoining(true);
         setJoinMessage('');
         setJoinError('');
+        setLeaveMessage('');
+        setLeaveError('');
         try {
             await groupService.joinGroup(groupId);
             setJoinMessage('Successfully sent join request or joined the community!');
@@ -47,6 +57,25 @@ const GroupDetail = () => {
             setJoinError(errorMsg);
         } finally {
             setIsJoining(false);
+        }
+    };
+
+    const handleLeaveGroup = async () => {
+        setIsLeaving(true);
+        setLeaveMessage('');
+        setLeaveError('');
+        setJoinMessage('');
+        setJoinError('');
+        try {
+            await groupService.leaveGroup(groupId);
+            setLeaveMessage('Successfully left the community.');
+            // Update UI here or fetch data if needed
+            fetchGroupData();
+        } catch (error) {
+            const errorMsg = error.response?.data?.message || error.message || "Failed to leave community. You might be the only admin.";
+            setLeaveError(errorMsg);
+        } finally {
+            setIsLeaving(false);
         }
     };
 
@@ -100,31 +129,53 @@ const GroupDetail = () => {
         }
     };
 
-    useEffect(() => {
-        const fetchGroupData = async () => {
+    const fetchGroupData = useCallback(async () => {
+        try {
+            const groupData = await groupService.getGroupById(groupId);
+            const postsData = await groupService.getGroupPosts(groupId);
+            // Also fetch join requests (might fail if not admin, catch silently)
+            let requestsData = [];
             try {
-                const groupData = await groupService.getGroupById(groupId);
-                const postsData = await groupService.getGroupPosts(groupId);
-                // Also fetch join requests (might fail if not admin, catch silently)
-                let requestsData = [];
-                try {
-                    requestsData = await groupService.getJoinRequests(groupId);
-                } catch (reqErr) {
-                    // Ignore 403 Forbidden or 404 Not Found here since it just means the user isn't an admin or doesn't have pending requests access
-                    console.warn("User is likely not an admin, skipping join requests fetch.");
-                }
-
-                setGroup(groupData);
-                setPosts(postsData);
-                setJoinRequests(requestsData);
-            } catch (error) {
-                console.error("Error fetching group data:", error);
-            } finally {
-                setLoading(false);
+                requestsData = await groupService.getJoinRequests(groupId);
+            } catch (reqErr) {
+                // Ignore 403 Forbidden or 404 Not Found here since it just means the user isn't an admin or doesn't have pending requests access
+                console.warn("User is likely not an admin, skipping join requests fetch.");
             }
-        };
-        fetchGroupData();
+
+            setGroup(groupData);
+            setPosts(postsData);
+            setJoinRequests(requestsData);
+        } catch (error) {
+            console.error("Error fetching group data:", error);
+        } finally {
+            setLoading(false);
+        }
     }, [groupId]);
+
+    const handleBanUser = async (targetUserId) => {
+        setIsBanning(true);
+        setBanningUserId(targetUserId);
+        setBanMessage('');
+        try {
+            await groupService.banUser(groupId, targetUserId);
+            setBanMessage(`Successfully banned user ${targetUserId}`);
+            // Remove them from join requests if they were pending
+            setJoinRequests(prev => prev.filter(req => req.userId !== targetUserId));
+            // Trigger a re-fetch in case we need to update member lists, UI etc.
+            fetchGroupData();
+            setTimeout(() => setBanMessage(''), 3000);
+        } catch (error) {
+            const errorMsg = error.response?.data?.message || error.message || "Failed to ban user.";
+            alert(errorMsg); // using alert for simplicity on list item failure, or could set a global error state
+        } finally {
+            setIsBanning(false);
+            setBanningUserId(null);
+        }
+    };
+
+    useEffect(() => {
+        fetchGroupData();
+    }, [fetchGroupData]);
 
     if (loading) return <div className="bg-black min-h-screen text-white flex items-center justify-center">Loading community...</div>;
     if (!group) return <div className="bg-black min-h-screen text-white flex items-center justify-center">Community not found</div>;
@@ -175,10 +226,17 @@ const GroupDetail = () => {
                                     >
                                         {isJoining ? 'Processing...' : 'Join Community'}
                                     </button>
+                                    <button
+                                        className="px-6 py-3 border border-rose-500/50 text-rose-400 font-bold rounded-xl hover:bg-rose-500/10 transition-all disabled:opacity-50"
+                                        onClick={handleLeaveGroup}
+                                        disabled={isLeaving}
+                                    >
+                                        {isLeaving ? 'Leaving...' : 'Leave'}
+                                    </button>
                                     <button className="invite-btn">Invite Members</button>
                                 </div>
-                                {joinError && <div className="text-red-400 text-sm font-medium">{joinError}</div>}
-                                {joinMessage && <div className="text-emerald-400 text-sm font-medium">{joinMessage}</div>}
+                                {(joinError || leaveError) && <div className="text-red-400 text-sm font-medium">{joinError || leaveError}</div>}
+                                {(joinMessage || leaveMessage) && <div className="text-emerald-400 text-sm font-medium">{joinMessage || leaveMessage}</div>}
                             </div>
                         </div>
                     </div>
@@ -255,6 +313,19 @@ const GroupDetail = () => {
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-2">
+                                                        {banMessage && banningUserId === request.userId && (
+                                                            <div className="absolute top-0 right-0 -mt-8 mr-4 bg-emerald-500 text-white text-xs px-2 py-1 rounded">
+                                                                {banMessage}
+                                                            </div>
+                                                        )}
+                                                        <button
+                                                            onClick={() => handleBanUser(request.userId)}
+                                                            disabled={isBanning}
+                                                            className="p-2 border border-rose-500/50 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors disabled:opacity-50 text-xs font-bold uppercase tracking-wider mr-2"
+                                                            title="Ban User"
+                                                        >
+                                                            {isBanning && banningUserId === request.userId ? '...' : 'Ban'}
+                                                        </button>
                                                         <button
                                                             onClick={() => handleReviewRequest(reqId, false)}
                                                             disabled={isReviewing}

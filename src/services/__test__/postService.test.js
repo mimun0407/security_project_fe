@@ -99,4 +99,25 @@ describe('postService', () => {
         expect(axiosClient.post).toHaveBeenCalledWith('/posts/share', shareData);
         expect(result).toEqual(mockData);
     });
+
+    // --- GET USER POSTS ---
+    test('getUserPosts should call the /posts/user/{userId} endpoint with pagination/sort', async () => {
+        const mockData = { data: { content: [{ id: 1, content: "User Post 1" }] } };
+        axiosClient.get.mockResolvedValue(mockData);
+
+        const result = await postService.getUserPosts("123", 1, 5, "id,asc");
+
+        expect(axiosClient.get).toHaveBeenCalledWith('/posts/user/123?page=1&size=5&sort=id,asc');
+        expect(result).toEqual(mockData);
+    });
+
+    test('getUserPosts should use default parameters if not provided', async () => {
+        const mockData = { data: { content: [] } };
+        axiosClient.get.mockResolvedValue(mockData);
+
+        const result = await postService.getUserPosts("123");
+
+        expect(axiosClient.get).toHaveBeenCalledWith('/posts/user/123?page=0&size=10&sort=createdAt,desc');
+        expect(result).toEqual(mockData);
+    });
 });

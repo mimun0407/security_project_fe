@@ -80,8 +80,56 @@ const groupService = {
         }
     },
 
+    /**
+     * Leave a group (for members)
+     */
     leaveGroup: async (id) => {
-        return axiosClient.delete(`/groups/${id}/leave`);
+        try {
+            const response = await axiosClient.delete(`/groups/${id}/leave`);
+            return response.data;
+        } catch (error) {
+            console.error("Error leaving group:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Ban a user from a group (Admin only)
+     */
+    banUser: async (groupId, targetUserId) => {
+        try {
+            const response = await axiosClient.post(`/groups/${groupId}/bans/${targetUserId}`);
+            return response.data;
+        } catch (error) {
+            console.error("Error banning user:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Unban a user from a group (Admin only)
+     */
+    unbanUser: async (groupId, targetUserId) => {
+        try {
+            const response = await axiosClient.delete(`/groups/${groupId}/bans/${targetUserId}`);
+            return response.data;
+        } catch (error) {
+            console.error("Error unbanning user:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Get list of groups a user has joined or is admin of
+     */
+    getUserGroups: async (userId) => {
+        try {
+            const response = await axiosClient.get(`/groups/user/${userId}`);
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching user's groups:", error);
+            throw error;
+        }
     },
 
     /**

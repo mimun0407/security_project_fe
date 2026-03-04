@@ -178,8 +178,13 @@ const userService = {
      * @returns {Promise<Object>} Response data
      */
     followUser: async (userId) => {
-        const response = await axiosClient.post(`/follow-user/${userId}/follow`);
-        return response.data;
+        try {
+            const response = await axiosClient.post(`/follow-user/${userId}/follow`);
+            return response.data;
+        } catch (error) {
+            console.error("Error following user:", error);
+            throw error;
+        }
     },
 
     /**
@@ -188,8 +193,13 @@ const userService = {
      * @returns {Promise<Object>} Response data
      */
     unfollowUser: async (userId) => {
-        const response = await axiosClient.delete(`/follow-user/${userId}/unfollow`);
-        return response.data;
+        try {
+            const response = await axiosClient.delete(`/follow-user/${userId}/unfollow`);
+            return response.data;
+        } catch (error) {
+            console.error("Error unfollowing user:", error);
+            throw error;
+        }
     },
 
     /**
@@ -202,6 +212,21 @@ const userService = {
         const response = await axiosClient.get("/user");
         // Ensure we return the content array if it's paginated
         return response.data?.data?.content || response.data?.content || response.data || [];
+    },
+
+    /**
+     * Get user stats (postCount, followerCount, followingCount, isFollowing)
+     * @param {string} userId 
+     * @returns {Promise<Object>} Response data
+     */
+    getUserStats: async (userId) => {
+        try {
+            const response = await axiosClient.get(`/follow-user/${userId}/stats`);
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching user stats:", error);
+            throw error;
+        }
     },
 };
 

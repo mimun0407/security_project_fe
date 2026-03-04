@@ -145,6 +145,32 @@ describe("userService", () => {
         });
     });
 
+    describe("followUser", () => {
+        it("should call axiosClient.post with correct userId", async () => {
+            const userId = "456";
+            const mockResponse = { data: { success: true, message: "Successfully followed user" } };
+            axiosClient.post.mockResolvedValue(mockResponse);
+
+            const result = await userService.followUser(userId);
+
+            expect(axiosClient.post).toHaveBeenCalledWith(`/follow-user/${userId}/follow`);
+            expect(result).toEqual(mockResponse.data);
+        });
+    });
+
+    describe("unfollowUser", () => {
+        it("should call axiosClient.delete with correct userId", async () => {
+            const userId = "456";
+            const mockResponse = { data: { success: true, message: "Successfully unfollowed user" } };
+            axiosClient.delete.mockResolvedValue(mockResponse);
+
+            const result = await userService.unfollowUser(userId);
+
+            expect(axiosClient.delete).toHaveBeenCalledWith(`/follow-user/${userId}/unfollow`);
+            expect(result).toEqual(mockResponse.data);
+        });
+    });
+
     describe("updateImage", () => {
         it("should call axiosClient.post with formData and file", async () => {
             const file = new File(["test"], "test.png", { type: "image/png" });
@@ -167,6 +193,19 @@ describe("userService", () => {
             const result = await userService.updateName(name);
 
             expect(axiosClient.post).toHaveBeenCalledWith(expect.stringContaining(`/user/update-name?name=${encodeURIComponent(name)}`));
+            expect(result).toEqual(mockResponse.data);
+        });
+    });
+
+    describe("getUserStats", () => {
+        it("should call axiosClient.get with correct userId", async () => {
+            const userId = "123";
+            const mockResponse = { data: { postCount: 10, followerCount: 50, followingCount: 20, isFollowing: true } };
+            axiosClient.get.mockResolvedValue(mockResponse);
+
+            const result = await userService.getUserStats(userId);
+
+            expect(axiosClient.get).toHaveBeenCalledWith(`/follow-user/${userId}/stats`);
             expect(result).toEqual(mockResponse.data);
         });
     });

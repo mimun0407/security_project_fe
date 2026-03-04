@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSuggestions } from '../../hooks/useSuggestions';
 import { usePlayer } from '../../context/PlayerContext';
 import postService from '../../services/postService';
+import likeService from '../../services/likeService';
 import './css/Feed.css';
 import { getUserAvatar } from '../../utils/userUtils';
 
@@ -75,11 +76,11 @@ function NewFeed() {
           userAvatar: getUserAvatar(post.authorAvatar || post.user?.imageUrl),
           postImage: post.imageUrl ? (post.imageUrl.startsWith('http') ? post.imageUrl : `http://localhost:8080${post.imageUrl}`) : DEFAULT_COVER_URL,
           musicLink: post.musicLink ? (post.musicLink.startsWith('http') ? post.musicLink : `http://localhost:8080${post.musicLink}`) : null,
-          likes: post.likes || 0,
+          likes: post.likeCount || post.likes || 0,
           caption: post.content,
           comments: 0,
           timeAgo: 'Vừa xong',
-          isLiked: false,
+          isLiked: post.liked || post.isLiked || false,
         };
       });
 
@@ -111,14 +112,22 @@ function NewFeed() {
     });
   };
 
-  const toggleLike = (postId) => {
-    setPosts(prevPosts =>
-      prevPosts.map(post =>
-        post.id === postId
-          ? { ...post, isLiked: !post.isLiked, likes: post.isLiked ? post.likes - 1 : post.likes + 1 }
-          : post
-      )
-    );
+  const toggleLike = async (postId) => {
+    try {
+      const response = await likeService.toggleLike(postId);
+      // Backend returns { isLiked, likeCount }
+      const { isLiked, likeCount } = response.data || response;
+
+      setPosts(prevPosts =>
+        prevPosts.map(post =>
+          post.id === postId
+            ? { ...post, isLiked: isLiked, likes: likeCount }
+            : post
+        )
+      );
+    } catch (error) {
+      console.error("Lỗi khi toggle like:", error);
+    }
   };
 
   const stories = MOCK_STORIES;

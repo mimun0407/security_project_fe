@@ -70,6 +70,18 @@ const postService = {
         // According to user request:
         // { "originalPostId": "string", "content": "string", "visibility": "FRIEND", "contextType": "PROFILE", "contextId": "string" }
         return axiosClient.post('/posts/share', shareData);
+    },
+
+    /**
+     * Get all posts of a specific user
+     * @param {string} userId 
+     * @param {number} page 
+     * @param {number} size 
+     * @param {string} sort 
+     * @returns {Promise}
+     */
+    getUserPosts: async (userId, page = 0, size = 10, sort = 'createdAt,desc') => {
+        return axiosClient.get(`/posts/user/${userId}?page=${page}&size=${size}&sort=${sort}`);
     }
 };
 

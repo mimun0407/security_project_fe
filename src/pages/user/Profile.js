@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/layout/Sidebar";
-import { Settings, Grid, Bookmark, User as UserIcon, Camera, Link as LinkIcon, Music, Lock, ListMusic, Edit2, Check, X } from 'lucide-react';
+import { Settings, Grid, Bookmark, User as UserIcon, Camera, Link as LinkIcon, Music, Lock, ListMusic, Edit2, Check, X, Heart } from 'lucide-react';
 import userService from "../../services/userService";
-import songService from "../../services/songService";
+import postService from "../../services/postService";
 import AddToPlaylistModal from "../../components/modals/AddToPlaylistModal";
 import "./css/Profile.css";
 import { getUserAvatar } from "../../utils/userUtils";
@@ -28,10 +28,11 @@ function UserMenu() {
   const [activeTab, setActiveTab] = useState("posts");
   const [isChangePwdOpen, setIsChangePwdOpen] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [userSongs, setUserSongs] = useState([]);
-  const [songsLoading, setSongsLoading] = useState(false);
+  const [userPosts, setUserPosts] = useState([]);
+  const [postsLoading, setPostsLoading] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
 
   // Playlist Modal State
   const [playlistModal, setPlaylistModal] = useState({
@@ -47,6 +48,13 @@ function UserMenu() {
     confirmPassword: ""
   });
   const [pwdErrors, setPwdErrors] = useState({});
+
+  // Stats State
+  const [stats, setStats] = useState({
+    postCount: 0,
+    followerCount: 0,
+    followingCount: 0
+  });
 
   // Edit Form State
   const [form, setForm] = useState({
@@ -82,6 +90,9 @@ function UserMenu() {
           String(targetId) === String(storedIdUser) ||
           userData.email === localStorage.getItem("email");
 
+        // Set state to indicate if viewing own profile
+        setIsOwnProfile(isOwnProfile);
+
         if (realId && isOwnProfile) {
           updateUser({
             idUser: realId,
@@ -103,8 +114,28 @@ function UserMenu() {
         });
         setIsFollowing(userData.isFollowed || false);
 
-        // Fetch Songs with realId or fallback to targetId
-        fetchSongs(realId || targetId);
+        // Fetch user stats
+        try {
+          const statsResponse = await userService.getUserStats(realId || targetId);
+          // Assuming response structure has { postCount, followerCount, followingCount, isFollowing }
+          // If it's wrapped in `data` or `result`, handle safely
+          const rawStats = statsResponse.data || statsResponse;
+          setStats({
+            postCount: rawStats.postCount || 0,
+            followerCount: rawStats.followerCount || 0,
+            followingCount: rawStats.followingCount || 0
+          });
+
+          // Also sync the `isFollowing` state with the stats API logic if provided
+          if (rawStats.hasOwnProperty('isFollowing') && !isOwnProfile) {
+            setIsFollowing(rawStats.isFollowing);
+          }
+        } catch (statsErr) {
+          console.error("Error fetching user stats:", statsErr);
+        }
+
+        // Fetch Posts with realId or fallback to targetId
+        fetchPosts(realId || targetId);
 
       } catch (err) {
         console.error("Error fetching user:", err);
@@ -113,16 +144,16 @@ function UserMenu() {
       }
     };
 
-    const fetchSongs = async (id) => {
+    const fetchPosts = async (id) => {
       try {
-        setSongsLoading(true);
-        const response = await songService.getUserSongs(id || targetId);
-        const songList = response.data?.data?.content || response.data?.content || response.data || [];
-        setUserSongs(Array.isArray(songList) ? songList : []);
+        setPostsLoading(true);
+        const response = await postService.getUserPosts(id || targetId, 0, 10, 'createdAt,desc');
+        const postList = response.data?.data?.content || response.data?.content || response.data || [];
+        setUserPosts(Array.isArray(postList) ? postList : []);
       } catch (err) {
-        console.error("Error fetching user songs:", err);
+        console.error("Error fetching user posts:", err);
       } finally {
-        setSongsLoading(false);
+        setPostsLoading(false);
       }
     };
 
@@ -273,28 +304,6 @@ function UserMenu() {
     }
   };
 
-  const handleSongImageChange = async (songId, e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    try {
-      setSongsLoading(true);
-      await songService.updateSongImage(songId, file);
-
-      // Refresh songs after update
-      const response = await songService.getUserSongs(targetId);
-      const songList = response.data?.data?.content || response.data?.content || response.data || [];
-      setUserSongs(Array.isArray(songList) ? songList : []);
-
-      alert("Cập nhật ảnh bài hát thành công!");
-    } catch (err) {
-      console.error("Lỗi cập nhật ảnh bài hát:", err);
-      alert("Cập nhật ảnh bài hát thất bại.");
-    } finally {
-      setSongsLoading(false);
-    }
-  };
-
   if (loading) return <div className="bg-black min-h-screen text-white flex items-center justify-center">Loading...</div>;
   if (!user) return <div className="bg-black min-h-screen text-white flex items-center justify-center">User not found</div>;
 
@@ -375,7 +384,7 @@ function UserMenu() {
                   )}
                 </div>
                 <div className="ig-action-btns">
-                  {targetId === storedIdUser ? (
+                  {isOwnProfile ? (
                     <>
                       <button className="ig-btn flex items-center gap-2" onClick={() => setIsChangePwdOpen(true)}>
                         <Lock className="w-4 h-4" />
@@ -405,17 +414,17 @@ function UserMenu() {
           {/* Stats Card */}
           <div className="stats-card">
             <div className="ig-stat-item">
-              <span className="ig-stat-count">0</span>
+              <span className="ig-stat-count">{stats.postCount}</span>
               <span className="ig-stat-label">Posts</span>
             </div>
             <div className="h-10 w-[1px] bg-slate-200 dark:bg-slate-800 self-center"></div>
             <div className="ig-stat-item">
-              <span className="ig-stat-count">248</span>
+              <span className="ig-stat-count">{stats.followerCount}</span>
               <span className="ig-stat-label">Followers</span>
             </div>
             <div className="h-10 w-[1px] bg-slate-200 dark:bg-slate-800 self-center"></div>
             <div className="ig-stat-item">
-              <span className="ig-stat-count">152</span>
+              <span className="ig-stat-count">{stats.followingCount}</span>
               <span className="ig-stat-label">Following</span>
             </div>
           </div>
@@ -445,77 +454,56 @@ function UserMenu() {
           {/* Grid Content / Empty State */}
           {activeTab === 'posts' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {songsLoading ? (
-                <div className="text-center py-20 opacity-50">Loading songs...</div>
-              ) : userSongs.length > 0 ? (
+              {postsLoading ? (
+                <div className="text-center py-20 opacity-50">Loading posts...</div>
+              ) : userPosts.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {userSongs.map(song => (
-                    <div key={song.id || song.idSong} className="song-card bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all group">
-                      <div className="relative aspect-square rounded-xl overflow-hidden mb-4">
-                        <img
-                          src={getUserAvatar(song.imageUrl)}
-                          alt={song.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Music className="w-8 h-8 text-white" />
-                          {targetId === storedIdUser && (
-                            <button
-                              className="absolute top-2 right-2 p-2 bg-white/20 hover:bg-white/40 rounded-full backdrop-blur-md transition-all"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                document.getElementById(`song-img-input-${song.id || song.idSong}`).click();
-                              }}
-                              title="Update Song Image"
-                            >
-                              <Camera className="w-4 h-4 text-white" />
-                            </button>
-                          )}
-                          <button
-                            className="absolute top-2 left-2 p-2 bg-white/20 hover:bg-white/40 rounded-full backdrop-blur-md transition-all"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPlaylistModal({
-                                isOpen: true,
-                                songId: song.id || song.idSong,
-                                songName: song.name
-                              });
-                            }}
-                            title="Add to Playlist"
-                          >
-                            <ListMusic className="w-4 h-4 text-white" />
-                          </button>
-                        </div>
-                        {targetId === storedIdUser && (
-                          <input
-                            type="file"
-                            id={`song-img-input-${song.id || song.idSong}`}
-                            className="hidden"
-                            accept="image/*"
-                            onChange={(e) => handleSongImageChange(song.id || song.idSong, e)}
+                  {userPosts.map(post => (
+                    <div key={post.id} className="post-card bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all group overflow-hidden">
+                      {post.imageUrl && (
+                        <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-4">
+                          <img
+                            src={post.imageUrl}
+                            alt="Post Media"
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                           />
-                        )}
+                        </div>
+                      )}
+                      <p className="text-sm font-medium line-clamp-3 mb-2">{post.content}</p>
+
+                      {post.originalPostId && (
+                        <div className="text-xs text-indigo-500 flex items-center gap-1 mt-2 font-bold bg-indigo-50 dark:bg-indigo-900/30 w-max px-2 py-1 rounded-md">
+                          <LinkIcon className="w-3 h-3" /> Shared Post
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 mt-3 uppercase tracking-wider font-bold opacity-70">
+                        <span>{new Date(post.createdAt || Date.now()).toLocaleDateString()} • {post.visibility || 'PUBLIC'}</span>
+                        <div className="flex items-center gap-1 text-red-500/80">
+                          <Heart className={`w-3 h-3 ${post.liked ? 'fill-red-500' : ''}`} />
+                          <span>{post.likeCount || 0}</span>
+                        </div>
                       </div>
-                      <h4 className="font-bold truncate">{song.name}</h4>
-                      <p className="text-xs text-slate-500 truncate">{song.genre?.name || "Music"}</p>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="ig-empty-state">
                   <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Music className="w-10 h-10 text-indigo-500" />
+                    <Grid className="w-10 h-10 text-indigo-500" />
                   </div>
-                  <div className="ig-empty-title">Share Your Music</div>
+                  <div className="ig-empty-title">Share Your Thoughts</div>
                   <div className="text-slate-500 max-w-sm mx-auto mb-8">
-                    Your posts and music will appear here once you start sharing with the community.
+                    Your posts will appear here once you start sharing with the community.
                   </div>
-                  <button
-                    className="btn-primary px-8 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-500/25 hover:scale-105 transition-transform"
-                    onClick={() => navigate('/')}
-                  >
-                    Create First Post
-                  </button>
+                  {isOwnProfile && (
+                    <button
+                      className="btn-primary px-8 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-500/25 hover:scale-105 transition-transform"
+                      onClick={() => navigate('/')}
+                    >
+                      Create First Post
+                    </button>
+                  )}
                 </div>
               )}
             </div>

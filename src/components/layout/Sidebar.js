@@ -81,9 +81,15 @@ const Sidebar = ({ onOpenCreateModal }) => {
                 />
                 <NavItem
                     icon={<Users className="w-6 h-6" />}
-                    label="Groups"
+                    label="Explore Groups"
                     active={isActive('/groups')}
                     onClick={() => handleNavigation('/groups')}
+                />
+                <NavItem
+                    icon={<Bookmark className="w-6 h-6" />}
+                    label="My Groups"
+                    active={isActive('/my-groups')}
+                    onClick={() => handleNavigation('/my-groups')}
                 />
                 <NavItem
                     icon={<Heart className="w-6 h-6" />}
