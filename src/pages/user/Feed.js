@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Pause, Music, Volume2, VolumeX, Heart, MessageCircle } from 'lucide-react';
-import axiosClient from '../../services/axiosClient';
+import { Play, Pause, Music, Heart, MessageCircle } from 'lucide-react';
 import CreatePostModal from '../../components/modals/CreatePostModal';
 import SharePostModal from '../../components/modals/SharePostModal';
 import CommentSection from '../../components/content/CommentSection';
@@ -16,7 +15,7 @@ import likeService from '../../services/likeService';
 import './css/Feed.css';
 import { getUserAvatar } from '../../utils/userUtils';
 
-import { MOCK_POSTS, MOCK_STORIES } from '../../mocks/mockData';
+import { MOCK_STORIES } from '../../mocks/mockData';
 
 const DEFAULT_COVER_URL = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=1000&auto=format&fit=crop";
 

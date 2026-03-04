@@ -3,10 +3,8 @@ import { Music, Film, Image as ImageIcon } from 'lucide-react';
 import Sidebar from '../../components/layout/Sidebar';
 import CreatePostModal from '../../components/modals/CreatePostModal';
 import { useAuth } from '../../context/AuthContext';
-import { useSuggestions } from '../../hooks/useSuggestions';
 import { usePlayer } from '../../context/PlayerContext';
 import './css/Explore.css';
-import { getUserAvatar } from '../../utils/userUtils';
 
 const MOCK_EXPLORE_DATA = [
     { id: 'e1', type: 'image', title: 'Urban Rhythm', meta: '24k likes', image: 'https://images.unsplash.com/photo-1514525253361-bee8a487409e?q=80&w=800', height: '400px' },

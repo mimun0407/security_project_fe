@@ -1,12 +1,10 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/layout/Sidebar";
-import { Settings, Grid, Bookmark, User as UserIcon, Camera, Link as LinkIcon, Music, Lock, ListMusic, Edit2, Check, X, Heart } from 'lucide-react';
+import { Grid, Bookmark, User as UserIcon, Camera, Link as LinkIcon, Lock, Edit2, Check, X, Heart } from 'lucide-react';
 import userService from "../../services/userService";
 import postService from "../../services/postService";
 import AddToPlaylistModal from "../../components/modals/AddToPlaylistModal";
-import CreatePostModal from '../../components/modals/CreatePostModal';
-import SharePostModal from '../../components/modals/SharePostModal';
 import PostDetailModal from '../../components/modals/PostDetailModal';
 import "./css/Profile.css";
 import { getUserAvatar } from "../../utils/userUtils";
