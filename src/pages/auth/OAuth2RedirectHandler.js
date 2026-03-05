@@ -18,6 +18,9 @@ const OAuth2RedirectHandler = () => {
       const refreshToken = params.get("refreshToken");
       const error = params.get("error");
       const emailParam = params.get("email");
+      const nameParam = params.get("name");
+      const imageUrlParam = params.get("imageUrl");
+      const rolesParam = params.get("roles");
 
       // 2. Handle errors from Backend (if any)
       if (error) {
@@ -37,16 +40,18 @@ const OAuth2RedirectHandler = () => {
             throw new Error("Unable to decode user ID from Token");
           }
 
+          // Parse roles from comma-separated string
+          const roleArray = rolesParam ? rolesParam.split(",") : ["USER"];
+
           // 5. Login via Context with info from token/params
-          // Roles will be determined by the backend or default to USER
           login({
             token,
             refreshToken,
             idUser: userId,
-            email: emailParam || "", // Fallback if email not in params
-            name: "", // Will be updated on profile load if needed
-            imageUrl: "",
-            role: ["USER"] // Default role, actual roles might be fetched later or embedded in token
+            email: emailParam || "",
+            name: nameParam || "",
+            imageUrl: imageUrlParam || "",
+            role: roleArray
           });
 
           // 6. Redirect

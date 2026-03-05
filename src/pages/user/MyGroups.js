@@ -100,7 +100,7 @@ const MyGroups = () => {
                                             {/* Display mock or real stats based on available data */}
                                             <div className="member-count flex items-center gap-2 mb-2">
                                                 <Users className="w-3 h-3" />
-                                                <span>{group.members || "1 Member"}</span>
+                                                <span>{group.members || 0} {group.members === 1 ? 'Member' : 'Members'}</span>
                                             </div>
                                             <h3 className="group-name text-xl font-bold mb-2">{group.name}</h3>
                                             <p className="group-desc text-slate-400 line-clamp-2 text-sm">{group.description || group.about || "A vibrant community for music lovers."}</p>

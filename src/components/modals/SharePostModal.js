@@ -21,12 +21,14 @@ const SharePostModal = ({ isOpen, onClose, post, onShareSuccess }) => {
             const fetchGroups = async () => {
                 setIsLoadingGroups(true);
                 try {
-                    // Ideally an API like getUserGroups
-                    // Using getGroups for now as fallback
-                    const groups = await groupService.getGroups();
+                    const userId = localStorage.getItem('idUser');
+                    let groups = [];
+                    if (userId) {
+                        groups = await groupService.getUserGroups(userId);
+                    }
                     setUserGroups(groups || []);
                     if (groups && groups.length > 0) {
-                        setContextId(groups[0].id.toString());
+                        setContextId(groups[0].id.toString() || groups[0].idGroup.toString());
                     }
                 } catch (err) {
                     console.error("Failed to load groups:", err);
@@ -145,7 +147,7 @@ const SharePostModal = ({ isOpen, onClose, post, onShareSuccess }) => {
                                         {userGroups.length === 0 ? (
                                             <option value="">{isLoadingGroups ? 'Loading...' : 'No Groups Found'}</option>
                                         ) : (
-                                            userGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)
+                                            userGroups.map(g => <option key={g.id || g.idGroup} value={g.id || g.idGroup}>{g.name || g.groupName}</option>)
                                         )}
                                     </select>
                                 </div>

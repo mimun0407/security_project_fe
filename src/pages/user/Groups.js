@@ -4,6 +4,7 @@ import Sidebar from '../../components/layout/Sidebar';
 import { Search, Plus, Users, ArrowRight, TrendingUp, Star } from 'lucide-react';
 import groupService from '../../services/groupService';
 import CreateGroupModal from '../../components/modals/CreateGroupModal';
+import { getUserAvatar } from '../../utils/userUtils';
 import './css/Groups.css';
 
 const Groups = () => {
@@ -101,15 +102,17 @@ const Groups = () => {
                                             </div>
                                         </div>
                                         <div className="card-info">
-                                            <div className="member-count">{group.members} members</div>
+                                            <div className="member-count">{group.members || 0} {group.members === 1 ? 'member' : 'members'}</div>
                                             <h3 className="group-name">{group.name}</h3>
                                             <p className="group-desc">{group.description}</p>
                                             <div className="group-card-footer">
                                                 <div className="member-avatars">
-                                                    <img src="https://i.pravatar.cc/100?u=1" alt="m1" />
-                                                    <img src="https://i.pravatar.cc/100?u=2" alt="m2" />
-                                                    <img src="https://i.pravatar.cc/100?u=3" alt="m3" />
-                                                    <div className="more-members">+12</div>
+                                                    {(group.memberAvatars || []).map((avatar, idx) => (
+                                                        <img key={idx} src={getUserAvatar(avatar)} alt={`m${idx}`} />
+                                                    ))}
+                                                    {group.members > (group.memberAvatars?.length || 0) && (
+                                                        <div className="more-members">+{group.members - (group.memberAvatars?.length || 0)}</div>
+                                                    )}
                                                 </div>
                                                 <ArrowRight className="w-5 h-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                                             </div>

@@ -243,6 +243,7 @@
     border-radius: 50%;
     border: 2px solid #0f172a;
     margin-right: -10px;
+    object-fit: cover;
 }
 
 .more-members {

@@ -80,8 +80,12 @@ const postService = {
      * @param {string} sort 
      * @returns {Promise}
      */
-    getUserPosts: async (userId, page = 0, size = 10, sort = 'createdAt,desc') => {
-        return axiosClient.get(`/posts/user/${userId}?page=${page}&size=${size}&sort=${sort}`);
+    getUserPosts: async (userId, page = 0, size = 10, sort = 'createdAt,desc', postType = null) => {
+        let url = `/posts/user/${userId}?page=${page}&size=${size}&sort=${sort}`;
+        if (postType) {
+            url += `&postType=${postType}`;
+        }
+        return axiosClient.get(url);
     },
 
     /**
@@ -91,6 +95,23 @@ const postService = {
      */
     getPostById: async (postId) => {
         return axiosClient.get(`/posts/post/${postId}`);
+    },
+
+    /**
+     * Get pending posts for a group (Admin only)
+     */
+    getPendingPostsByGroup: async (groupId, page = 0, size = 10) => {
+        const response = await axiosClient.get(`/posts/group/${groupId}/pending?page=${page}&size=${size}`);
+        return response.data.data; // This is the Page object
+    },
+
+    /**
+     * Approve or reject a post (Admin only)
+     * @param {string} postId 
+     * @param {boolean} approve 
+     */
+    reviewPost: async (postId, approve) => {
+        return axiosClient.post(`/posts/post/${postId}/review?approve=${approve}`);
     }
 };
 

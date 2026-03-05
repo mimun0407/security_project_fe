@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Pause, Music, Heart, MessageCircle } from 'lucide-react';
+import { Play, Pause, Music, Heart, MessageCircle, Share2 } from 'lucide-react';
 import CreatePostModal from '../../components/modals/CreatePostModal';
 import SharePostModal from '../../components/modals/SharePostModal';
 import CommentSection from '../../components/content/CommentSection';
@@ -88,6 +88,12 @@ function NewFeed() {
           timeAgo: 'Just now',
           isLiked: post.liked || post.isLiked || false,
           liked: post.liked || post.isLiked || false,
+          // Share details
+          postType: post.postType,
+          idPostShare: post.idPostShare,
+          userNameShare: post.userNameShare,
+          userImageShare: post.userImageShare,
+          contentShare: post.contentShare,
         };
       });
 
@@ -198,30 +204,50 @@ function NewFeed() {
             ) : (
               posts.map(post => (
                 <article key={post.id} className="post-article">
-                  <div className="post-header cursor-pointer" onClick={() => { setSelectedPostIdDetail(post.id); setIsDetailModalOpen(true); }}>
-                    <div className="flex items-center gap-3">
-                      <div className="relative cursor-pointer" onClick={(e) => { e.stopPropagation(); handleProfileClick(post.authorId); }}>
-                        <img
-                          src={post.userAvatar}
-                          alt={post.username}
-                          className="w-10 h-10 rounded-full object-cover border-2 border-white/10"
-                          onError={(e) => { e.target.src = 'https://i.pravatar.cc/150' }}
-                        />
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
-                      </div>
-                      <div className="flex flex-col cursor-pointer" onClick={(e) => { e.stopPropagation(); handleProfileClick(post.authorId); }}>
-                        <span className="username">{post.username}</span>
-                        {post.musicLink && (
-                          <div className="flex items-center music-info">
-                            <Music className="w-3 h-3" />
-                            <span>Original Audio</span>
+                  <div className="post-header">
+                    <div className="flex flex-col w-full">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="relative cursor-pointer" onClick={(e) => { e.stopPropagation(); handleProfileClick(post.authorId); }}>
+                            <img
+                              src={post.userAvatar}
+                              alt={post.username}
+                              className="w-10 h-10 rounded-full object-cover border-2 border-white/10"
+                              onError={(e) => { e.target.src = 'https://i.pravatar.cc/150' }}
+                            />
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
                           </div>
-                        )}
+                          <div className="flex flex-col cursor-pointer" onClick={(e) => { e.stopPropagation(); handleProfileClick(post.authorId); }}>
+                            <span className="username font-bold text-white hover:text-indigo-400 transition-colors">{post.username}</span>
+                            {post.musicLink && (
+                              <div className="flex items-center music-info text-[10px] text-slate-400">
+                                <Music className="w-3 h-3 mr-1" />
+                                <span>Original Audio</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <button className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-slate-500">
+                          <MoreHorizontalIcon />
+                        </button>
                       </div>
+
+                      {post.postType === 'SHARE' && (
+                        <div
+                          className="mt-2 ml-13 flex items-center gap-2 text-xs text-slate-400 hover:text-indigo-400 cursor-pointer transition-colors border-t border-white/5 pt-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPostIdDetail(post.idPostShare);
+                            setIsDetailModalOpen(true);
+                          }}
+                        >
+                          <Share2 className="w-3 h-3" />
+                          <span>Shared from </span>
+                          <span className="font-bold text-indigo-400">{post.userNameShare}</span>
+                          <span>'s post</span>
+                        </div>
+                      )}
                     </div>
-                    <button className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-slate-500">
-                      <MoreHorizontalIcon />
-                    </button>
                   </div>
 
                   <div className="post-media-container group cursor-pointer" onClick={() => { setSelectedPostIdDetail(post.id); setIsDetailModalOpen(true); }}>

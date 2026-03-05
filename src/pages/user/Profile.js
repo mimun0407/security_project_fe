@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/layout/Sidebar";
-import { Grid, Bookmark, User as UserIcon, Camera, Link as LinkIcon, Lock, Edit2, Check, X, Heart } from 'lucide-react';
+import { Grid, Bookmark, User as UserIcon, Camera, Link as LinkIcon, Lock, Edit2, Check, X, Heart, Share2 } from 'lucide-react';
 import userService from "../../services/userService";
 import postService from "../../services/postService";
 import AddToPlaylistModal from "../../components/modals/AddToPlaylistModal";
@@ -121,9 +121,6 @@ function Profile() {
         } catch (statsErr) {
           console.error("Error fetching user stats:", statsErr);
         }
-
-        fetchPosts(realId || targetId);
-
       } catch (err) {
         console.error("Error fetching user:", err);
       } finally {
@@ -131,44 +128,60 @@ function Profile() {
       }
     };
 
-    const fetchPosts = async (id) => {
-      try {
-        setPostsLoading(true);
-        const response = await postService.getUserPosts(id || targetId, 0, 10, 'createdAt,desc');
-        const rawList = response.data?.data?.content || response.data?.content || response.data || [];
-        const mappedList = Array.isArray(rawList) ? rawList.map(p => {
-          const author = p.user || {};
-          const authorName = p.authorName || author.name || author.username || 'Unknown';
-          const authorAvatar = getUserAvatar(p.authorAvatar || author.imageUrl || author.avatar);
-
-          const musicUrl = p.musicLink || p.musicUrl;
-          const imgUrl = p.imageUrl || p.postImage;
-
-          return {
-            id: p.id || p.postId || p.idPost,
-            content: p.content || p.caption || "",
-            imageUrl: imgUrl ? (imgUrl.startsWith('http') ? imgUrl : `http://localhost:8080${imgUrl}`) : null,
-            musicLink: musicUrl ? (musicUrl.startsWith('http') ? musicUrl : `http://localhost:8080${musicUrl}`) : null,
-            authorName: authorName,
-            authorAvatar: authorAvatar,
-            likeCount: p.likeCount ?? p.likes ?? 0,
-            commentCount: p.commentCount ?? 0,
-            liked: p.liked ?? p.isLiked ?? false,
-            createdAt: p.createdAt || new Date().toISOString(),
-            user: author
-          };
-        }) : [];
-        setUserPosts(mappedList);
-      } catch (err) {
-        console.error("Error fetching user posts:", err);
-      } finally {
-        setPostsLoading(false);
-      }
-    };
-
     fetchUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetId, navigate]);
+  }, [targetId, navigate, storedIdUser, updateUser]);
+
+  useEffect(() => {
+    if (targetId) {
+      if (activeTab === 'posts') {
+        fetchPosts(targetId, 'OWNER');
+      } else if (activeTab === 'shares') {
+        fetchPosts(targetId, 'SHARE');
+      }
+    }
+  }, [activeTab, targetId]);
+
+  const fetchPosts = async (id, postType = null) => {
+    try {
+      setPostsLoading(true);
+      const response = await postService.getUserPosts(id || targetId, 0, 15, 'createdAt,desc', postType);
+      const rawList = response.data?.data?.content || response.data?.content || response.data || [];
+      const mappedList = Array.isArray(rawList) ? rawList.map(p => {
+        const author = p.user || {};
+        const authorName = p.authorName || author.name || author.username || 'Unknown';
+        const authorAvatar = getUserAvatar(p.authorAvatar || author.imageUrl || author.avatar);
+
+        const musicUrl = p.musicLink || p.musicUrl;
+        const imgUrl = p.imageUrl || p.postImage;
+
+        return {
+          id: p.id || p.idPost || p.postId,
+          content: p.content || p.caption || "",
+          imageUrl: imgUrl ? (imgUrl.startsWith('http') ? imgUrl : `http://localhost:8080${imgUrl}`) : null,
+          musicLink: musicUrl ? (musicUrl.startsWith('http') ? musicUrl : `http://localhost:8080${musicUrl}`) : null,
+          authorName: authorName,
+          authorAvatar: authorAvatar,
+          likeCount: p.likeCount || 0,
+          commentCount: p.commentCount || 0,
+          liked: p.liked || p.isLiked || false,
+          isLiked: p.liked || p.isLiked || false,
+          createdAt: p.postDate || p.createdAt,
+          user: author,
+          // Share details
+          postType: p.postType,
+          idPostShare: p.idPostShare,
+          userNameShare: p.userNameShare,
+          userImageShare: p.userImageShare,
+          contentShare: p.contentShare,
+        };
+      }) : [];
+      setUserPosts(mappedList);
+    } catch (err) {
+      console.error("Error fetching user posts:", err);
+    } finally {
+      setPostsLoading(false);
+    }
+  };
 
   const handleAvatarUpdate = async (e) => {
     const file = e.target.files[0];
@@ -364,23 +377,23 @@ function Profile() {
             </div>
           </div>
 
-          <div className="ig-tabs">
+          <div className="flex border-t border-slate-200 dark:border-slate-800 ig-tabs mt-10">
             <div className={`ig-tab ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}>
               <Grid className="w-4 h-4" /> POSTS
+            </div>
+            <div className={`ig-tab ${activeTab === 'shares' ? 'active' : ''}`} onClick={() => setActiveTab('shares')}>
+              <Share2 className="w-4 h-4" /> SHARES
             </div>
             {isOwnProfile && (
               <>
                 <div className={`ig-tab ${activeTab === 'saved' ? 'active' : ''}`} onClick={() => setActiveTab('saved')}>
                   <Bookmark className="w-4 h-4" /> SAVED
                 </div>
-                <div className={`ig-tab ${activeTab === 'tagged' ? 'active' : ''}`} onClick={() => setActiveTab('tagged')}>
-                  <UserIcon className="w-4 h-4" /> TAGGED
-                </div>
               </>
             )}
           </div>
 
-          {activeTab === 'posts' && (
+          {(activeTab === 'posts' || activeTab === 'shares') && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               {postsLoading ? (
                 <div className="text-center py-20 opacity-50">Loading posts...</div>
@@ -394,21 +407,29 @@ function Profile() {
                     >
                       <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-4 bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
                         <img
-                          src={post.imageUrl || getUserAvatar(user.imageUrl)}
+                          src={post.imageUrl || getUserAvatar(user?.imageUrl)}
                           alt="Post Media"
                           className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!post.imageUrl ? 'opacity-40 blur-sm scale-110' : ''}`}
                         />
                         {!post.imageUrl && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-                            <img src={getUserAvatar(user.imageUrl)} alt="" className="w-16 h-16 rounded-full border-4 border-white/20 shadow-2xl mb-3 backdrop-blur-md" />
+                            <img src={getUserAvatar(user?.imageUrl)} alt="" className="w-16 h-16 rounded-full border-4 border-white/20 shadow-2xl mb-3 backdrop-blur-md" />
                             <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Thought Sharing</span>
                           </div>
                         )}
                       </div>
-                      <p className="text-sm font-medium line-clamp-3 mb-2 flex-1">{post.content}</p>
-                      {post.originalPostId && (
-                        <div className="text-xs text-indigo-500 flex items-center gap-1 mt-2 font-bold bg-indigo-50 dark:bg-indigo-900/30 w-max px-2 py-1 rounded-md">
-                          <LinkIcon className="w-3 h-3" /> Shared Post
+                      <p className="text-sm font-medium line-clamp-3 mb-2 flex-1 leading-relaxed opacity-90">{post.content}</p>
+                      {post.postType === 'SHARE' && (
+                        <div
+                          className="text-[10px] text-indigo-500 flex items-center gap-1.5 mt-2 font-bold bg-indigo-500/10 w-max px-2.5 py-1 rounded-lg border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPostIdDetail(post.idPostShare);
+                            setIsDetailModalOpen(true);
+                          }}
+                        >
+                          <Share2 className="w-3 h-3" />
+                          <span>Shared from {post.userNameShare}</span>
                         </div>
                       )}
                       <div className="flex items-center justify-between text-[10px] text-slate-400 mt-3 uppercase tracking-wider font-bold opacity-70">
@@ -424,13 +445,13 @@ function Profile() {
               ) : (
                 <div className="ig-empty-state">
                   <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Grid className="w-10 h-10 text-indigo-500" />
+                    {activeTab === 'posts' ? <Grid className="w-10 h-10 text-indigo-500" /> : <Share2 className="w-10 h-10 text-indigo-500" />}
                   </div>
-                  <div className="ig-empty-title">Share Your Thoughts</div>
+                  <div className="ig-empty-title">{activeTab === 'posts' ? 'Share Your Thoughts' : 'No Shared Posts'}</div>
                   <div className="text-slate-500 max-w-sm mx-auto mb-8">
-                    Your posts will appear here once you start sharing with the community.
+                    {activeTab === 'posts' ? 'Your posts will appear here once you start sharing with the community.' : 'Shared posts will appear here when you share content from others.'}
                   </div>
-                  {isOwnProfile && (
+                  {isOwnProfile && activeTab === 'posts' && (
                     <button
                       className="btn-primary px-8 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-500/25 hover:scale-105 transition-transform"
                       onClick={() => navigate('/')}
@@ -443,12 +464,7 @@ function Profile() {
             </div>
           )}
 
-          {activeTab !== 'posts' && (
-            <div className="text-center py-20 text-slate-400 font-medium bg-slate-50/50 dark:bg-slate-900/30 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
-              <div className="mb-2">Coming Soon</div>
-              <div className="text-xs opacity-60">This feature is under development</div>
-            </div>
-          )}
+
         </div>
       </main>
 
