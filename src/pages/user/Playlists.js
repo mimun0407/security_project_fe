@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/layout/Sidebar';
 import { Plus, Music, MoreVertical, Play, Trash2, Edit2, Search as SearchIcon, X } from 'lucide-react';
 import playlistService from '../../services/playlistService';
+import songService from '../../services/songService';
 import { toast } from 'react-hot-toast';
 import './css/Playlists.css';
 
@@ -14,6 +15,9 @@ const Playlists = () => {
     const [selectedPlaylist, setSelectedPlaylist] = useState(null);
     const [songs, setSongs] = useState([]);
     const [songsLoading, setSongsLoading] = useState(false);
+    const [songSearchQuery, setSongSearchQuery] = useState('');
+    const [songSearchResults, setSongSearchResults] = useState([]);
+    const [isSearchingSongs, setIsSearchingSongs] = useState(false);
 
     useEffect(() => {
         fetchPlaylists();
@@ -48,7 +52,9 @@ const Playlists = () => {
 
     const handleViewPlaylist = (playlist) => {
         setSelectedPlaylist(playlist);
-        fetchPlaylistSongs(playlist.id || playlist.idPlaylist);
+        setSongSearchQuery('');
+        setSongSearchResults([]);
+        fetchPlaylistSongs(playlist.playlistId);
     };
 
     const handleCreatePlaylist = async (e) => {
@@ -70,8 +76,41 @@ const Playlists = () => {
         }
     };
 
+    const handleAddSongDirectly = async (song) => {
+        try {
+            await playlistService.addSongToPlaylist(song.id || song.songId, selectedPlaylist.playlistId);
+            toast.success(`"${song.name}" added to playlist! 🎵`);
+            fetchPlaylistSongs(selectedPlaylist.playlistId);
+        } catch (error) {
+            console.error("Error adding song:", error);
+            toast.error("Failed to add song.");
+        }
+    };
+
+    const handleSearchSongs = async (query) => {
+        setSongSearchQuery(query);
+        if (query.length < 2) {
+            setSongSearchResults([]);
+            return;
+        }
+
+        try {
+            setIsSearchingSongs(true);
+            const response = await songService.searchSongs(query);
+            const data = response.data?.data || response.data || [];
+            // Filter out songs already in playlist
+            const currentIds = songs.map(s => s.songId);
+            const filtered = data.filter(s => !currentIds.includes(s.songId));
+            setSongSearchResults(filtered);
+        } catch (error) {
+            console.error("Error searching songs:", error);
+        } finally {
+            setIsSearchingSongs(false);
+        }
+    };
+
     const filteredPlaylists = playlists.filter(pl =>
-        pl.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        pl.playlistName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         pl.description?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -112,7 +151,7 @@ const Playlists = () => {
                     ) : filteredPlaylists.length > 0 ? (
                         filteredPlaylists.map(playlist => (
                             <div
-                                key={playlist.id || playlist.idPlaylist}
+                                key={playlist.playlistId}
                                 className="playlist-card group cursor-pointer"
                                 onClick={() => handleViewPlaylist(playlist)}
                             >
@@ -129,7 +168,7 @@ const Playlists = () => {
                                 <div className="playlist-info">
                                     <div className="flex justify-between items-start">
                                         <div className="flex-1 min-w-0 pr-2">
-                                            <h3 className="font-bold text-lg truncate mb-1">{playlist.name}</h3>
+                                            <h3 className="font-bold text-lg truncate mb-1">{playlist.playlistName}</h3>
                                             <p className="text-xs opacity-50 line-clamp-2 min-h-[32px]">
                                                 {playlist.description || "No description provided."}
                                             </p>
@@ -139,7 +178,7 @@ const Playlists = () => {
                                         </button>
                                     </div>
                                     <div className="mt-4 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider opacity-40">
-                                        <span>{playlist.songs?.length || 0} SONGS</span>
+                                        <span>{playlist.songCount || 0} SONGS</span>
                                         <span>CURATED BY YOU</span>
                                     </div>
                                 </div>
@@ -175,7 +214,7 @@ const Playlists = () => {
                                     <Music className="w-10 h-10 opacity-30" />
                                 </div>
                                 <div>
-                                    <h2 className="text-3xl font-bold mb-2">{selectedPlaylist.name}</h2>
+                                    <h2 className="text-3xl font-bold mb-2">{selectedPlaylist.playlistName}</h2>
                                     <p className="text-sm opacity-60 max-w-md">{selectedPlaylist.description || "No description provided."}</p>
                                     <div className="flex gap-4 mt-4 text-xs font-bold uppercase tracking-widest opacity-40">
                                         <span>{songs.length} Tracks</span>
@@ -187,6 +226,52 @@ const Playlists = () => {
                             <button onClick={() => setSelectedPlaylist(null)} className="p-2 hover:bg-white/10 rounded-full transition">
                                 <X className="w-6 h-6" />
                             </button>
+                        </div>
+
+                        {/* Search Songs Area */}
+                        <div className="playlist-song-search-area mb-8">
+                            <h3 className="text-xs font-bold uppercase tracking-widest opacity-40 mb-4">Let's find something for your playlist</h3>
+                            <div className="relative">
+                                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+                                <input
+                                    type="text"
+                                    className="playlist-song-search-input w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white/5 border border-white/5 focus:border-indigo-500/50 transition-all text-sm outline-none"
+                                    placeholder="Search for songs to add..."
+                                    value={songSearchQuery}
+                                    onChange={(e) => handleSearchSongs(e.target.value)}
+                                />
+                            </div>
+
+                            {/* Search Results */}
+                            {songSearchQuery.length >= 2 && (
+                                <div className="mt-4 bg-white/5 rounded-3xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                                    {isSearchingSongs ? (
+                                        <div className="p-8 text-center opacity-40 text-xs font-bold uppercase tracking-widest">Searching...</div>
+                                    ) : songSearchResults.length > 0 ? (
+                                        <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                            {songSearchResults.map(song => (
+                                                <div key={song.songId} className="flex items-center gap-4 px-6 py-3 hover:bg-indigo-500/10 transition-colors group">
+                                                    <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                                                        <Music className="w-5 h-5 opacity-20" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-bold text-sm truncate uppercase tracking-tight">{song.name}</p>
+                                                        <p className="text-[10px] opacity-40 uppercase tracking-widest font-bold font-mono">Original Audio</p>
+                                                    </div>
+                                                    <button
+                                                        className="px-4 py-2 rounded-xl bg-white/5 hover:bg-indigo-500 font-bold text-[10px] uppercase tracking-widest transition-all scale-95 hover:scale-100"
+                                                        onClick={() => handleAddSongDirectly(song)}
+                                                    >
+                                                        Add
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="p-8 text-center opacity-40 text-xs font-bold uppercase tracking-widest">No songs found</div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div className="songs-list-container custom-scrollbar">
@@ -202,19 +287,19 @@ const Playlists = () => {
                                     </div>
                                     <div className="songs-body py-2">
                                         {songs.map((song, index) => (
-                                            <div key={song.id || song.idSong} className="song-row grid grid-cols-[40px_1fr_1fr_1fr] px-4 py-3 hover:bg-white/5 rounded-xl transition group">
+                                            <div key={song.songId} className="song-row grid grid-cols-[40px_1fr_1fr_1fr] px-4 py-3 hover:bg-white/5 rounded-xl transition group">
                                                 <div className="flex items-center text-sm opacity-40 group-hover:hidden">{index + 1}</div>
                                                 <div className="hidden items-center group-hover:flex">
                                                     <Play className="w-3 h-3 fill-indigo-500 text-indigo-500" />
                                                 </div>
                                                 <div className="flex items-center gap-3 min-w-0">
                                                     <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
-                                                        {song.imageUrl ? <img src={song.imageUrl} alt="" className="w-full h-full object-cover rounded-lg" /> : <Music className="w-4 h-4 opacity-20" />}
+                                                        {song.songImage ? <img src={song.songImage} alt="" className="w-full h-full object-cover rounded-lg" /> : <Music className="w-4 h-4 opacity-20" />}
                                                     </div>
-                                                    <span className="font-bold truncate text-sm">{song.name}</span>
+                                                    <span className="font-bold truncate text-sm">{song.songName}</span>
                                                 </div>
                                                 <div className="flex items-center text-sm opacity-60 truncate pr-2">
-                                                    {song.user?.name || song.artistName || "Unknown Artist"}
+                                                    {song.songArtistName || "Unknown Artist"}
                                                 </div>
                                                 <div className="flex items-center text-sm opacity-40 truncate pr-2 italic">
                                                     {song.group?.name || song.albumName || "Singles"}

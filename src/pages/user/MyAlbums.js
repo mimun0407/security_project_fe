@@ -5,8 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { getErrorMessage } from '../../utils/errorUtils';
 import {
     Plus, Trash2, Edit, Disc, Music, Camera, AlertTriangle,
-    ChevronLeft, Loader2, Image as ImageIcon, CheckCircle2, XCircle, UploadCloud
+    ChevronLeft, Loader2, Image as ImageIcon, CheckCircle2, XCircle, UploadCloud,
+    MoreHorizontal, ListMusic
 } from 'lucide-react';
+import AddToPlaylistModal from '../../components/modals/AddToPlaylistModal';
 import '../admin/css/GenreManagement.css';
 import { toast } from 'react-hot-toast';
 import './css/MyAlbums.css';
@@ -32,6 +34,13 @@ const MyAlbums = () => {
     const [availableSongs, setAvailableSongs] = useState([]);
     const [isAddSongModalOpen, setIsAddSongModalOpen] = useState(false);
     const [selectedAlbumId, setSelectedAlbumId] = useState(null);
+
+    const [activeMenuId, setActiveMenuId] = useState(null);
+    const [playlistModal, setPlaylistModal] = useState({
+        isOpen: false,
+        songId: null,
+        songName: ''
+    });
 
     useEffect(() => {
         fetchAlbums();
@@ -367,6 +376,40 @@ const MyAlbums = () => {
                                                     >
                                                         {song.albumId === selectedAlbumId ? "Added" : "Add to Album"}
                                                     </button>
+                                                    <div className="relative inline-block ml-2">
+                                                        <button
+                                                            className={`p-2 rounded-full transition-all ${activeMenuId === (song.id || song.idSong) ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:bg-white/10 hover:text-white'}`}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setActiveMenuId(activeMenuId === (song.id || song.idSong) ? null : (song.id || song.idSong));
+                                                            }}
+                                                        >
+                                                            <MoreHorizontal className="w-4 h-4" />
+                                                        </button>
+
+                                                        {activeMenuId === (song.id || song.idSong) && (
+                                                            <>
+                                                                <div className="fixed inset-0 z-[1100]" onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); }}></div>
+                                                                <div className="absolute right-0 top-full mt-2 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-2 z-[1200] animate-in fade-in zoom-in-95 duration-200">
+                                                                    <button
+                                                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-indigo-500/20 transition-all uppercase tracking-wider text-left"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setPlaylistModal({
+                                                                                isOpen: true,
+                                                                                songId: song.id || song.idSong,
+                                                                                songName: song.name
+                                                                            });
+                                                                            setActiveMenuId(null);
+                                                                        }}
+                                                                    >
+                                                                        <ListMusic className="w-4 h-4" />
+                                                                        Add to Playlist
+                                                                    </button>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -380,6 +423,13 @@ const MyAlbums = () => {
                     </div>
                 </div>
             )}
+
+            <AddToPlaylistModal
+                isOpen={playlistModal.isOpen}
+                onClose={() => setPlaylistModal({ ...playlistModal, isOpen: false })}
+                songId={playlistModal.songId}
+                songName={playlistModal.songName}
+            />
         </div>
     );
 };

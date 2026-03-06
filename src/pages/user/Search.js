@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search as SearchIcon, X, Clock, User, Music, Disc, TrendingUp, ChevronRight } from 'lucide-react';
+import { Search as SearchIcon, X, Clock, User, Music, Disc, TrendingUp, ChevronRight, MoreHorizontal, ListMusic } from 'lucide-react';
 import Sidebar from '../../components/layout/Sidebar';
+import AddToPlaylistModal from '../../components/modals/AddToPlaylistModal';
+import songService from '../../services/songService';
 import { usePlayer } from '../../context/PlayerContext';
 import './css/Search.css';
 
@@ -35,28 +37,30 @@ const Search = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState('all');
     const [results, setResults] = useState([]);
-    const [isSearching, setIsSearching] = useState(false);
     const [recentSearches, setRecentSearches] = useState([
         { id: 'r1', name: 'The Weeknd', type: 'history' },
         { id: 'r2', name: 'Taylor Swift', type: 'history' }
     ]);
+    const [activeMenuId, setActiveMenuId] = useState(null);
+    const [playlistModal, setPlaylistModal] = useState({
+        isOpen: false,
+        songId: null,
+        songName: ''
+    });
 
     // Debounce search
     useEffect(() => {
         if (!searchQuery.trim()) {
             setResults([]);
-            setIsSearching(false);
             return;
         }
 
-        setIsSearching(true);
         const timer = setTimeout(() => {
             const baseResults = MOCK_RESULTS[activeTab] || [];
             const filtered = baseResults.filter(item =>
                 item.name.toLowerCase().includes(searchQuery.toLowerCase())
             );
             setResults(filtered);
-            setIsSearching(false);
         }, 500);
 
         return () => clearTimeout(timer);
@@ -71,15 +75,25 @@ const Search = () => {
         setRecentSearches([]);
     };
 
-    const handleResultClick = (item) => {
+    const handleResultClick = async (item) => {
         if (item.type === 'song') {
-            playTrack({
-                id: item.id,
-                title: item.name,
-                artist: item.meta.split('•')[0].trim(),
-                avatar: item.image,
-                url: "http://localhost:8080/api/v1/stream/demo.mp3" // Placeholder for demo
-            });
+            try {
+                const res = await songService.getSongById(item.id);
+                const fullSong = res.data?.data || res.data;
+                const mUrl = fullSong?.musicUrl;
+                if (!mUrl) return;
+                const musicLink = mUrl.startsWith('http') ? mUrl : `http://localhost:8080${mUrl}`;
+
+                playTrack({
+                    id: item.id,
+                    title: item.name,
+                    artist: item.meta.split('•')[0].trim(),
+                    avatar: item.image,
+                    url: musicLink
+                });
+            } catch (err) {
+                console.error("Failed to fetch song for playback:", err);
+            }
         }
     };
 
@@ -200,9 +214,47 @@ const Search = () => {
                                                         {item.meta}
                                                     </div>
                                                 </div>
-                                                <button className="result-action">
-                                                    <ChevronRight className="w-5 h-5" />
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    {(item.type === 'song' || item.type === 'album') && (
+                                                        <div className="relative">
+                                                            <button
+                                                                className={`p-2 rounded-full transition-all ${activeMenuId === item.id ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:bg-white/10 hover:text-white'}`}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setActiveMenuId(activeMenuId === item.id ? null : item.id);
+                                                                }}
+                                                            >
+                                                                <MoreHorizontal className="w-5 h-5" />
+                                                            </button>
+
+                                                            {activeMenuId === item.id && (
+                                                                <>
+                                                                    <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); }}></div>
+                                                                    <div className="absolute right-0 top-full mt-2 w-48 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-2 z-[110] animate-in fade-in zoom-in-95 duration-200">
+                                                                        <button
+                                                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-indigo-500/20 transition-all uppercase tracking-wider text-left"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setPlaylistModal({
+                                                                                    isOpen: true,
+                                                                                    songId: item.id,
+                                                                                    songName: item.name
+                                                                                });
+                                                                                setActiveMenuId(null);
+                                                                            }}
+                                                                        >
+                                                                            <ListMusic className="w-4 h-4" />
+                                                                            Add to Playlist
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                    <button className="result-action">
+                                                        <ChevronRight className="w-5 h-5" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -222,6 +274,13 @@ const Search = () => {
                     </div>
                 </div>
             </main>
+
+            <AddToPlaylistModal
+                isOpen={playlistModal.isOpen}
+                onClose={() => setPlaylistModal({ ...playlistModal, isOpen: false })}
+                songId={playlistModal.songId}
+                songName={playlistModal.songName}
+            />
         </div>
     );
 };

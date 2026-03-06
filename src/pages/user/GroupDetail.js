@@ -4,7 +4,7 @@ import Sidebar from '../../components/layout/Sidebar';
 import {
     Users, Info, Shield, MessageSquare, Share2, Heart,
     MoreHorizontal, Music, Play, Pause, Globe, Calendar, MapPin, Lock,
-    Check, X, UserPlus, ShieldCheck
+    ListMusic, Check, X, UserPlus, ShieldCheck
 } from 'lucide-react';
 import SharePostModal from '../../components/modals/SharePostModal';
 import PostDetailModal from '../../components/modals/PostDetailModal';
@@ -13,6 +13,8 @@ import { useModal } from '../../context/ModalContext';
 import groupService from '../../services/groupService';
 import postService from '../../services/postService';
 import likeService from '../../services/likeService';
+import songService from '../../services/songService';
+import AddToPlaylistModal from '../../components/modals/AddToPlaylistModal';
 import { usePlayer } from '../../context/PlayerContext';
 import { getUserAvatar } from '../../utils/userUtils';
 import { formatDate } from '../../utils/dateUtils';
@@ -49,6 +51,9 @@ const GroupDetail = () => {
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedPostIdDetail, setSelectedPostIdDetail] = useState(null);
+    const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
+    const [songToPlaylist, setSongToPlaylist] = useState({ id: null, name: '' });
+    const [activeMenuId, setActiveMenuId] = useState(null);
     const [postToShare, setPostToShare] = useState(null);
 
     const { playTrack, currentTrack, isPlaying } = usePlayer();
@@ -272,13 +277,27 @@ const GroupDetail = () => {
         }
     };
 
-    const handlePlayMusic = (post) => {
+    const handlePlayMusic = async (post) => {
+        let musicLink = post.musicLink;
+        if (!musicLink && post.idSong) {
+            try {
+                const res = await songService.getSongById(post.idSong);
+                const fullSong = res.data?.data || res.data;
+                musicLink = fullSong?.musicUrl;
+            } catch (err) {
+                console.error("Failed to fetch song details:", err);
+                return;
+            }
+        }
+        musicLink = musicLink ? (musicLink.startsWith('http') ? musicLink : `http://localhost:8080${musicLink}`) : null;
+        if (!musicLink) return;
+
         playTrack({
-            id: post.idPost,
+            id: post.idSong || post.idPost,
             title: post.nameSong || post.nameAlbum || "Original Audio",
             artist: post.username,
             avatar: post.imageUrlSong || post.imageUrlAlbum || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop",
-            url: post.musicLink ? (post.musicLink.startsWith('http') ? post.musicLink : `http://localhost:8080${post.musicLink}`) : null
+            url: musicLink
         });
     };
 
@@ -306,6 +325,13 @@ const GroupDetail = () => {
                 onUpdate={(postId, updates) => {
                     setPosts(prev => prev.map(p => p.idPost === postId ? { ...p, ...updates } : p));
                 }}
+            />
+
+            <AddToPlaylistModal
+                isOpen={isPlaylistModalOpen}
+                onClose={() => setIsPlaylistModalOpen(false)}
+                songId={songToPlaylist.id}
+                songName={songToPlaylist.name}
             />
             <ConfirmModal
                 isOpen={isLeaveConfirmOpen}
@@ -625,9 +651,49 @@ const GroupDetail = () => {
                                                                 <div className="post-time">{new Date(post.postDate).toLocaleString()}</div>
                                                             </div>
                                                         </div>
-                                                        <button className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <MoreHorizontal className="w-5 h-5 text-slate-400" />
-                                                        </button>
+                                                        <div className="relative">
+                                                            <button
+                                                                className={`p-2 rounded-full transition-all ${activeMenuId === post.idPost ? 'bg-indigo-500/10 text-indigo-400 opacity-100' : 'opacity-0 group-hover:opacity-100 text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setActiveMenuId(activeMenuId === post.idPost ? null : post.idPost);
+                                                                }}
+                                                            >
+                                                                <MoreHorizontal className="w-5 h-5" />
+                                                            </button>
+
+                                                            {activeMenuId === post.idPost && (
+                                                                <>
+                                                                    <div className="fixed inset-0 z-[110]" onClick={() => setActiveMenuId(null)}></div>
+                                                                    <div
+                                                                        className="absolute right-0 top-full mt-2 w-56 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-2 z-[120] animate-in fade-in zoom-in-95 duration-200"
+                                                                        onClick={e => e.stopPropagation()}
+                                                                    >
+                                                                        {(post.idSong || post.idAlbum) && (
+                                                                            <button
+                                                                                className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-300 hover:text-white hover:bg-indigo-500/20 transition-all uppercase tracking-wider"
+                                                                                onClick={() => {
+                                                                                    setSongToPlaylist({
+                                                                                        id: post.idSong || post.idAlbum,
+                                                                                        name: post.songName || post.albumName || "Track"
+                                                                                    });
+                                                                                    setIsPlaylistModalOpen(true);
+                                                                                    setActiveMenuId(null);
+                                                                                }}
+                                                                            >
+                                                                                <ListMusic className="w-4 h-4" />
+                                                                                Add to Playlist
+                                                                            </button>
+                                                                        )}
+                                                                        <div className="mx-2 my-1 border-t border-white/5"></div>
+                                                                        <button className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-rose-500/70 hover:text-rose-500 hover:bg-rose-500/10 transition-all uppercase tracking-wider">
+                                                                            <X className="w-4 h-4" />
+                                                                            Hide Post
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     </div>
 
                                                     <div className="post-content cursor-pointer relative z-0" onClick={() => { setSelectedPostIdDetail(post.idPost); setIsDetailModalOpen(true); }}>
@@ -637,7 +703,11 @@ const GroupDetail = () => {
                                                             <div className="post-music-player">
                                                                 <div className="music-cover cursor-pointer relative z-10" onClick={(e) => { e.stopPropagation(); handlePlayMusic(post); }}>
                                                                     <img
-                                                                        src={post.imageUrlSong || post.imageUrlAlbum || getUserAvatar(post.userImage)}
+                                                                        src={
+                                                                            post.imageUrlSong ? (post.imageUrlSong.startsWith('http') ? post.imageUrlSong : `http://localhost:8080${post.imageUrlSong}`) :
+                                                                                post.imageUrlAlbum ? (post.imageUrlAlbum.startsWith('http') ? post.imageUrlAlbum : `http://localhost:8080${post.imageUrlAlbum}`) :
+                                                                                    getUserAvatar(post.userImage)
+                                                                        }
                                                                         alt="Cover"
                                                                         className={`w-full h-full object-cover ${(currentTrack?.id === post.idPost && isPlaying) ? 'opacity-90' : ''}`}
                                                                     />

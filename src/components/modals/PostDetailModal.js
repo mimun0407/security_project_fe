@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Heart, MessageCircle, Music, Play, Pause, MoreHorizontal, Share2 } from 'lucide-react';
+import { X, Heart, MessageCircle, Music, Play, Pause, MoreHorizontal, Share2, ListMusic } from 'lucide-react';
+import AddToPlaylistModal from './AddToPlaylistModal';
+import SharePostModal from './SharePostModal';
 import postService from '../../services/postService';
 import likeService from '../../services/likeService';
+import commentService from '../../services/commentService';
+import songService from '../../services/songService';
 import CommentSection from '../content/CommentSection';
 import { getUserAvatar } from '../../utils/userUtils';
 import { formatDate } from '../../utils/dateUtils';
@@ -14,9 +18,14 @@ import './PostDetailModal.css';
 const PostDetailModal = ({ isOpen, onClose, postId, onUpdate }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const { playTrack, currentTrack, isPlaying } = usePlayer();
+    const { playTrack, currentTrack, isPlaying, isPaused } = usePlayer();
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [showTrackMenu, setShowTrackMenu] = useState(null);
+    const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
+    const [songToPlaylist, setSongToPlaylist] = useState({ id: null, name: '' });
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [postToShare, setPostToShare] = useState(null);
 
     useEffect(() => {
         if (isOpen && postId) {
@@ -54,6 +63,8 @@ const PostDetailModal = ({ isOpen, onClose, postId, onUpdate }) => {
             const rawImage = rawData.imageUrl || rawData.postImage || rawData.songImgUrl || songObj.imageUrl || songObj.postImage;
             const songName = rawData.songName || songObj.name || songObj.title || "Original Audio";
 
+            const targetId = rawData.targetId || rawData.idSong || rawData.idAlbum || songObj.id;
+
             const imageUrl = rawImage ? (rawImage.startsWith('http') ? rawImage : `http://localhost:8080${rawImage}`) : null;
             const musicLink = rawMusic ? (rawMusic.startsWith('http') ? rawMusic : `http://localhost:8080${rawMusic}`) : null;
 
@@ -75,6 +86,7 @@ const PostDetailModal = ({ isOpen, onClose, postId, onUpdate }) => {
                 liked: rawData.isLiked || false,
                 createdAt: rawData.timeCreated || new Date().toISOString(),
                 targetType: rawData.targetType,
+                targetId: targetId,
                 albumData: rawData.postResponse // This contains the songs list from backend
             };
 
@@ -115,14 +127,28 @@ const PostDetailModal = ({ isOpen, onClose, postId, onUpdate }) => {
         }
     };
 
-    const handlePlayMusic = () => {
-        if (!post || !post.musicLink) return;
+    const handlePlayMusic = async () => {
+        if (!post) return;
+        let musicLink = post.musicLink;
+        if (!musicLink && post.idSong) {
+            try {
+                const res = await songService.getSongById(post.idSong);
+                const fullSong = res.data?.data || res.data;
+                musicLink = fullSong?.musicUrl;
+            } catch (err) {
+                console.error("Failed to fetch song details:", err);
+                return;
+            }
+        }
+        musicLink = musicLink ? (musicLink.startsWith('http') ? musicLink : `http://localhost:8080${musicLink}`) : null;
+        if (!musicLink) return;
+
         playTrack({
-            id: post.id,
+            id: post.idSong || post.id,
             title: post.songName,
             artist: post.authorName,
             avatar: post.imageUrl || post.authorAvatar,
-            url: post.musicLink
+            url: musicLink
         });
     };
 
@@ -209,9 +235,6 @@ const PostDetailModal = ({ isOpen, onClose, postId, onUpdate }) => {
                                         </span>
                                     </div>
                                 </div>
-                                <button className="p-2 hover:bg-slate-800 rounded-full">
-                                    <MoreHorizontal className="w-5 h-5 text-slate-500" />
-                                </button>
                             </div>
 
                             {/* Content & Comments */}
@@ -230,17 +253,28 @@ const PostDetailModal = ({ isOpen, onClose, postId, onUpdate }) => {
                                         </h3>
                                         <div className="flex flex-col gap-2">
                                             {post.albumData.songs.map((song, index) => {
-                                                const isActive = currentTrack?.url?.includes(song.musicUrl);
+                                                const isActive = currentTrack?.id === song.songId;
                                                 const trackImage = song.imageUrl ? (song.imageUrl.startsWith('http') ? song.imageUrl : `http://localhost:8080${song.imageUrl}`) : (post.imageUrl || post.authorAvatar);
 
                                                 return (
                                                     <div
                                                         key={song.songId}
-                                                        className={`track-item group flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer ${isActive ? 'bg-indigo-500/10 border border-indigo-500/30' : 'hover:bg-white/5 border border-transparent'}`}
-                                                        onClick={() => {
-                                                            const mUrl = song.musicUrl;
-                                                            const musicLink = mUrl ? (mUrl.startsWith('http') ? mUrl : `http://localhost:8080${mUrl}`) : null;
+                                                        className={`track-item group flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer relative ${isActive ? 'bg-indigo-500/10 border border-indigo-500/30' : 'hover:bg-white/5 border border-transparent'}`}
+                                                        onClick={async () => {
+                                                            let musicLink = song.musicUrl;
+                                                            if (!musicLink) {
+                                                                try {
+                                                                    const res = await songService.getSongById(song.songId);
+                                                                    const fullSong = res.data?.data || res.data;
+                                                                    musicLink = fullSong?.musicUrl;
+                                                                } catch (error) {
+                                                                    console.error("Failed to fetch song details:", error);
+                                                                    return;
+                                                                }
+                                                            }
+                                                            musicLink = musicLink ? (musicLink.startsWith('http') ? musicLink : `http://localhost:8080${musicLink}`) : null;
                                                             if (!musicLink) return;
+
                                                             playTrack({
                                                                 id: song.songId,
                                                                 title: song.name,
@@ -250,36 +284,64 @@ const PostDetailModal = ({ isOpen, onClose, postId, onUpdate }) => {
                                                             });
                                                         }}
                                                     >
-                                                        <span className="text-[10px] font-bold opacity-30 w-4">{index + 1}</span>
-                                                        <div className="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center relative overflow-hidden shrink-0 shadow-lg border border-white/5">
-                                                            <img
-                                                                src={trackImage}
-                                                                alt={song.name}
-                                                                className={`w-full h-full object-cover transition-all duration-300 ${isActive && isPlaying ? 'opacity-40 scale-110 blur-[1px]' : 'group-hover:opacity-40'}`}
-                                                            />
-                                                            <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${isActive && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                                                {isActive && isPlaying ? (
-                                                                    <div className="flex items-end gap-0.5 h-4 mb-1">
-                                                                        <div className="w-0.5 bg-indigo-400 animate-[music-bar_0.6s_ease-in-out_infinite] h-full"></div>
-                                                                        <div className="w-0.5 bg-indigo-400 animate-[music-bar_0.8s_ease-in-out_infinite] h-2/3"></div>
-                                                                        <div className="w-0.5 bg-indigo-400 animate-[music-bar_0.7s_ease-in-out_infinite] h-5/6"></div>
+                                                        <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                                            <img src={trackImage} alt="" className="w-full h-full object-cover" />
+                                                            <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${isActive ? 'bg-indigo-500/40 opacity-100' : 'bg-black/40 opacity-0 group-hover:opacity-100'}`}>
+                                                                {isActive && !isPaused ? (
+                                                                    <div className="flex gap-0.5 items-end h-3">
+                                                                        <div className="w-0.5 bg-white animate-[pulse_0.6s_ease-in-out_infinite]" style={{ height: '60%' }}></div>
+                                                                        <div className="w-0.5 bg-white animate-[pulse_0.8s_ease-in-out_infinite]" style={{ height: '100%' }}></div>
+                                                                        <div className="w-0.5 bg-white animate-[pulse_0.7s_ease-in-out_infinite]" style={{ height: '80%' }}></div>
                                                                     </div>
                                                                 ) : (
-                                                                    <Play className="w-4 h-4 fill-white text-white drop-shadow-md" />
+                                                                    <Play className="w-4 h-4 fill-white text-white" />
                                                                 )}
                                                             </div>
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className={`text-xs font-bold truncate ${isActive ? 'text-indigo-400' : 'text-slate-200'}`}>
+                                                            <div className={`text-sm font-bold truncate transition-colors ${isActive ? 'text-indigo-400' : 'text-slate-200 group-hover:text-white'}`}>
                                                                 {song.name}
-                                                            </p>
-                                                            <p className="text-[10px] text-slate-500 truncate mt-0.5">{post.authorName}</p>
-                                                        </div>
-                                                        {isActive && isPlaying && (
-                                                            <div className="pr-2">
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_#6366f1] animate-pulse"></div>
                                                             </div>
-                                                        )}
+                                                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Track {index + 1}</div>
+                                                        </div>
+
+                                                        {/* Action Menu Button */}
+                                                        <div className="relative">
+                                                            <button
+                                                                className={`p-2 rounded-full transition-all ${showTrackMenu === song.songId ? 'bg-indigo-500/20 text-indigo-400' : 'opacity-0 group-hover:opacity-100 text-slate-500 hover:bg-white/10 hover:text-white'}`}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setShowTrackMenu(showTrackMenu === song.songId ? null : song.songId);
+                                                                }}
+                                                            >
+                                                                <MoreHorizontal className="w-4 h-4" />
+                                                            </button>
+
+                                                            {/* Dropdown Menu */}
+                                                            {showTrackMenu === song.songId && (
+                                                                <>
+                                                                    <div className="fixed inset-0 z-[110]" onClick={() => setShowTrackMenu(null)}></div>
+                                                                    <div className="absolute right-0 top-full mt-2 w-48 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-2 z-[120] animate-in fade-in zoom-in-95 duration-200">
+                                                                        <button
+                                                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-indigo-500/20 transition-all uppercase tracking-wider"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setSongToPlaylist({ id: song.songId, name: song.name });
+                                                                                setIsPlaylistModalOpen(true);
+                                                                                setShowTrackMenu(null);
+                                                                            }}
+                                                                        >
+                                                                            <ListMusic className="w-4 h-4" />
+                                                                            Add to Playlist
+                                                                        </button>
+                                                                        <button className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5 transition-all uppercase tracking-wider">
+                                                                            <Share2 className="w-4 h-4" />
+                                                                            Share Track
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 );
                                             })}
@@ -298,15 +360,58 @@ const PostDetailModal = ({ isOpen, onClose, postId, onUpdate }) => {
 
                             {/* Footer Actions */}
                             <div className="p-4 border-t border-slate-900 bg-slate-950">
-                                <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center justify-between mb-3 relative">
                                     <div className="flex items-center gap-4">
                                         <Heart
                                             onClick={handleToggleLike}
                                             className={`w-7 h-7 cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 ${post.liked ? 'fill-rose-500 text-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.4)]' : 'text-slate-500 hover:text-rose-500'}`}
                                         />
                                         <MessageCircle className="w-7 h-7 text-slate-500 cursor-pointer hover:text-indigo-500 transition-colors" />
-                                        <Share2 className="w-7 h-7 text-slate-500 cursor-pointer hover:text-indigo-500 transition-colors" />
+                                        <Share2
+                                            onClick={() => {
+                                                setPostToShare(post);
+                                                setIsShareModalOpen(true);
+                                            }}
+                                            className="w-7 h-7 text-slate-500 cursor-pointer hover:text-indigo-500 transition-colors"
+                                        />
                                     </div>
+
+                                    {(post.targetType === 'SONG' || post.targetType === 'ALBUM' || post.targetType === 'SHARE' || post.songName) && (
+                                        <div className="relative">
+                                            <button
+                                                className={`p-2 rounded-full transition-colors ${showTrackMenu === post.id ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-500 hover:bg-slate-800 hover:text-slate-300'}`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setShowTrackMenu(showTrackMenu === post.id ? null : post.id);
+                                                }}
+                                            >
+                                                <MoreHorizontal className="w-6 h-6" />
+                                            </button>
+
+                                            {showTrackMenu === post.id && (
+                                                <>
+                                                    <div className="fixed inset-0 z-[110]" onClick={(e) => { e.stopPropagation(); setShowTrackMenu(null); }}></div>
+                                                    <div
+                                                        className="absolute right-0 bottom-full mb-2 w-48 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl py-2 z-[120] animate-in fade-in slide-in-from-bottom-2 duration-200"
+                                                        onClick={e => e.stopPropagation()}
+                                                    >
+                                                        <button
+                                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-indigo-500/20 transition-all uppercase tracking-wider text-left"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSongToPlaylist({ id: post.id, name: post.songName || "Track" });
+                                                                setIsPlaylistModalOpen(true);
+                                                                setShowTrackMenu(null);
+                                                            }}
+                                                        >
+                                                            <ListMusic className="w-4 h-4" />
+                                                            Add to Playlist
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="text-sm font-bold text-white">
                                     {post.likeCount.toLocaleString()} likes
@@ -320,6 +425,22 @@ const PostDetailModal = ({ isOpen, onClose, postId, onUpdate }) => {
                     </div>
                 )}
             </div>
+            {/* Playlist Modal Integration */}
+            <AddToPlaylistModal
+                isOpen={isPlaylistModalOpen}
+                onClose={() => setIsPlaylistModalOpen(false)}
+                songId={songToPlaylist.id}
+                songName={songToPlaylist.name}
+            />
+            {/* Share Modal Integration */}
+            <SharePostModal
+                isOpen={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
+                post={postToShare}
+                onShareSuccess={() => {
+                    // Update external state if necessary
+                }}
+            />
         </div>
     );
 };

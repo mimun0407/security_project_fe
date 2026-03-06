@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Pause, Music, Heart, MessageCircle, Share2 } from 'lucide-react';
+import { Play, Pause, Music, Heart, MessageCircle, Share2, MoreHorizontal, ListMusic, X } from 'lucide-react';
 import SharePostModal from '../../components/modals/SharePostModal';
 import CommentSection from '../../components/content/CommentSection';
 import PostDetailModal from '../../components/modals/PostDetailModal';
+import AddToPlaylistModal from '../../components/modals/AddToPlaylistModal';
 import Sidebar from '../../components/layout/Sidebar';
 import RightSidebar from '../../components/layout/RightSidebar';
 import { useAuth } from '../../context/AuthContext';
@@ -11,6 +12,7 @@ import { useSuggestions } from '../../hooks/useSuggestions';
 import { usePlayer } from '../../context/PlayerContext';
 import postService from '../../services/postService';
 import likeService from '../../services/likeService';
+import songService from '../../services/songService';
 import { useModal } from '../../context/ModalContext';
 import './css/Feed.css';
 import { getUserAvatar } from '../../utils/userUtils';
@@ -51,6 +53,9 @@ function NewFeed() {
   const [expandedComments, setExpandedComments] = useState({}); // { postId: boolean }
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedPostIdDetail, setSelectedPostIdDetail] = useState(null);
+  const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
+  const [songToPlaylist, setSongToPlaylist] = useState({ id: null, name: '' });
+  const [activeMenuId, setActiveMenuId] = useState(null);
 
   const audioRef = useRef(null);
 
@@ -122,14 +127,27 @@ function NewFeed() {
     return () => window.removeEventListener('POST_CREATED', handleGlobalPostCreated);
   }, [fetchPosts]);
 
-  // Helpers Audio/Like
-  const handlePlayMusic = (post) => {
+  const handlePlayMusic = async (post) => {
+    let musicLink = post.musicLink;
+    if (!musicLink && post.idSong) {
+      try {
+        const res = await songService.getSongById(post.idSong);
+        const fullSong = res.data?.data || res.data;
+        musicLink = fullSong?.musicUrl;
+      } catch (err) {
+        console.error("Failed to fetch song details:", err);
+        return;
+      }
+    }
+    musicLink = musicLink ? (musicLink.startsWith('http') ? musicLink : `http://localhost:8080${musicLink}`) : null;
+    if (!musicLink) return;
+
     playTrack({
-      id: post.id,
-      title: "Original Audio",
+      id: post.idSong || post.id,
+      title: post.nameSong || "Original Audio",
       artist: post.username,
-      avatar: post.postImage,
-      url: post.musicLink
+      avatar: post.imageUrlSong || post.postImage || getUserAvatar(post.imageUrlUser),
+      url: musicLink
     });
   };
 
@@ -179,6 +197,13 @@ function NewFeed() {
           // Sync updates to the feed list if needed
           setPosts(prev => prev.map(p => p.id === postId ? { ...p, ...updates } : p));
         }}
+      />
+
+      <AddToPlaylistModal
+        isOpen={isPlaylistModalOpen}
+        onClose={() => setIsPlaylistModalOpen(false)}
+        songId={songToPlaylist.id}
+        songName={songToPlaylist.name}
       />
 
       {/* Left Sidebar */}
@@ -234,9 +259,49 @@ function NewFeed() {
                             )}
                           </div>
                         </div>
-                        <button className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-slate-500">
-                          <MoreHorizontalIcon />
-                        </button>
+                        <div className="relative">
+                          <button
+                            className={`p-2 rounded-full transition-all ${activeMenuId === post.id ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuId(activeMenuId === post.id ? null : post.id);
+                            }}
+                          >
+                            <MoreHorizontal className="w-5 h-5" />
+                          </button>
+
+                          {activeMenuId === post.id && (
+                            <>
+                              <div className="fixed inset-0 z-[110]" onClick={() => setActiveMenuId(null)}></div>
+                              <div
+                                className="absolute right-0 top-full mt-2 w-56 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-2 z-[120] animate-in fade-in zoom-in-95 duration-200"
+                                onClick={e => e.stopPropagation()}
+                              >
+                                {(post.idSong || post.idAlbum) && (
+                                  <button
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-300 hover:text-white hover:bg-indigo-500/20 transition-all uppercase tracking-wider"
+                                    onClick={() => {
+                                      setSongToPlaylist({
+                                        id: post.idSong || post.idAlbum,
+                                        name: post.songName || post.albumName || "Track"
+                                      });
+                                      setIsPlaylistModalOpen(true);
+                                      setActiveMenuId(null);
+                                    }}
+                                  >
+                                    <ListMusic className="w-4 h-4" />
+                                    Add to Playlist
+                                  </button>
+                                )}
+                                <div className="mx-2 my-1 border-t border-white/5"></div>
+                                <button className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-rose-500/70 hover:text-rose-500 hover:bg-rose-500/10 transition-all uppercase tracking-wider">
+                                  <X className="w-4 h-4" />
+                                  Not Interested
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
 
                       {post.postType === 'SHARE' && (

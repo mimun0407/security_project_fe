@@ -11,23 +11,10 @@ const postService = {
      * @param {File} imageFile (Optional)
      * @returns {Promise}
      */
-    createPost: async (postData, imageFile) => {
+    createPost: async (postData) => {
         // According to user request: 
         // { "content": "string", "visibility": "PUBLIC", "targetType": "SONG", "targetId": "string" }
-
-        if (!imageFile) {
-            // If no image, send as plain JSON
-            return axiosClient.post('/posts', postData);
-        }
-
-        // If there's an image, use multipart
-        const formData = new FormData();
-        formData.append('post', new Blob([JSON.stringify(postData)], { type: "application/json" }));
-        formData.append('image', imageFile);
-
-        return axiosClient.post('/posts', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        return axiosClient.post('/posts', postData);
     },
 
     /**
@@ -37,18 +24,8 @@ const postService = {
      * @param {File} imageFile (Optional)
      * @returns {Promise}
      */
-    createGroupPost: async (groupId, postData, imageFile) => {
-        if (!imageFile) {
-            return axiosClient.post(`/posts/group/${groupId}`, postData);
-        }
-
-        const formData = new FormData();
-        formData.append('post', new Blob([JSON.stringify(postData)], { type: "application/json" }));
-        formData.append('image', imageFile);
-
-        return axiosClient.post(`/posts/group/${groupId}`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+    createGroupPost: async (groupId, postData) => {
+        return axiosClient.post(`/posts/group/${groupId}`, postData);
     },
 
     /**

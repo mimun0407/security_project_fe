@@ -2,11 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/layout/Sidebar";
 import { useModal } from "../../context/ModalContext";
-import { Grid, Bookmark, User as UserIcon, Camera, Link as LinkIcon, Lock, Edit2, Check, X, Heart, Share2, Disc } from 'lucide-react';
+import { Grid, Bookmark, User as UserIcon, Camera, Link as LinkIcon, Lock, Edit2, Check, X, Heart, Share2, Disc, MoreHorizontal, ListMusic } from 'lucide-react';
 import userService from "../../services/userService";
 import postService from "../../services/postService";
 import AddToPlaylistModal from "../../components/modals/AddToPlaylistModal";
 import PostDetailModal from '../../components/modals/PostDetailModal';
+import SharePostModal from '../../components/modals/SharePostModal';
 import "./css/Profile.css";
 import { getUserAvatar } from "../../utils/userUtils";
 import { useAuth } from "../../context/AuthContext";
@@ -52,10 +53,10 @@ function Profile() {
 
   // Stats State
   const [stats, setStats] = useState({
-    postCount: 0,
-    followerCount: 0,
     followingCount: 0
   });
+
+  const [activeMenuId, setActiveMenuId] = useState(null);
 
   // Edit Form State
   const [form, setForm] = useState({
@@ -182,7 +183,6 @@ function Profile() {
           commentCount: p.commentCount || 0,
           liked: p.liked || p.isLiked || false,
           isLiked: p.liked || p.isLiked || false,
-          isLiked: p.liked || p.isLiked || false,
           createdAt: p.postDate || p.createdAt,
           user: author,
           // Share details
@@ -193,6 +193,9 @@ function Profile() {
           userNameShare: p.userNameShare,
           userImageShare: p.userImageShare,
           contentShare: p.contentShare,
+          songName: p.songName || p.title || p.name,
+          idSong: p.idSong || (p.targetType === 'SONG' ? p.targetId : null),
+          idAlbum: p.idAlbum || (p.targetType === 'ALBUM' ? p.targetId : null),
         };
       }) : [];
       setUserPosts(mappedList);
@@ -372,9 +375,8 @@ function Profile() {
               </div>
 
               <div className="flex items-center gap-4 text-sm opacity-70 font-medium">
-                <span className="flex items-center gap-1"><UserIcon className="w-3 h-3" /> @{user.email?.split('@')[0]}</span>
                 {user.email && (
-                  <span className="flex items-center gap-1"><LinkIcon className="w-3 h-3" /> {user.email}</span>
+                  <span className="flex items-center gap-1"><UserIcon className="w-3 h-3" /> {user.email}</span>
                 )}
               </div>
             </div>
@@ -409,80 +411,162 @@ function Profile() {
             </div>
           </div>
 
-          {(activeTab === 'posts' || activeTab === 'shares' || activeTab === 'albums') && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {postsLoading ? (
-                <div className="text-center py-20 opacity-50">Loading posts...</div>
-              ) : (activeTab === 'albums' ? userPosts.filter(p => p.targetType === 'ALBUM') : userPosts).length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {(activeTab === 'albums' ? userPosts.filter(p => p.targetType === 'ALBUM') : userPosts).map(post => (
-                    <div
-                      key={post.id}
-                      className="post-card bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all group overflow-hidden cursor-pointer flex flex-col"
-                      onClick={() => { setSelectedPostIdDetail(post.id); setIsDetailModalOpen(true); }}
-                    >
-                      <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-4 bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
-                        <img
-                          src={post.imageUrl || getUserAvatar(user?.imageUrl)}
-                          alt="Post Media"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      </div>
-                      <p className="text-sm font-medium line-clamp-3 mb-2 flex-1 leading-relaxed opacity-90">{post.content}</p>
-                      {post.postType === 'SHARE' && (
-                        <div
-                          className="text-[10px] text-indigo-500 flex items-center gap-1.5 mt-2 font-bold bg-indigo-500/10 w-max px-2.5 py-1 rounded-lg border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPostIdDetail(post.idPostShare);
-                            setIsDetailModalOpen(true);
-                          }}
-                        >
-                          <Share2 className="w-3 h-3" />
-                          <span>Shared from {post.userNameShare}</span>
+          {(activeTab === 'posts' || activeTab === 'shares' || activeTab === 'albums') && (() => {
+            const displayedPosts = activeTab === 'albums'
+              ? userPosts.filter(p => p.targetType === 'ALBUM')
+              : activeTab === 'posts'
+                ? userPosts.filter(p => p.targetType !== 'ALBUM')
+                : userPosts;
+
+            return (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {postsLoading ? (
+                  <div className="text-center py-20 opacity-50">Loading posts...</div>
+                ) : displayedPosts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {displayedPosts.map(post => (
+                      <div
+                        key={post.id}
+                        className="post-card bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all group overflow-hidden cursor-pointer flex flex-col"
+                        onClick={() => { setSelectedPostIdDetail(post.id); setIsDetailModalOpen(true); }}
+                      >
+                        <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-4 bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
+                          <img
+                            src={
+                              post.imageUrl ? (post.imageUrl.startsWith('http') ? post.imageUrl : `http://localhost:8080${post.imageUrl}`) :
+                                post.imageUrlSong ? (post.imageUrlSong.startsWith('http') ? post.imageUrlSong : `http://localhost:8080${post.imageUrlSong}`) :
+                                  post.imageUrlAlbum ? (post.imageUrlAlbum.startsWith('http') ? post.imageUrlAlbum : `http://localhost:8080${post.imageUrlAlbum}`) :
+                                    getUserAvatar(user?.imageUrl)
+                            }
+                            alt="Post Media"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
                         </div>
-                      )}
-                      <div className="flex items-center justify-between text-[10px] text-slate-400 mt-3 uppercase tracking-wider font-bold opacity-70">
-                        <span>{new Date(post.createdAt || Date.now()).toLocaleDateString()} • {post.visibility || 'PUBLIC'}</span>
-                        <div className="flex items-center gap-1 text-red-500/80">
-                          <Heart className={`w-3 h-3 ${post.liked ? 'fill-red-500' : ''}`} />
-                          <span>{post.likeCount || 0}</span>
+                        <p className="text-sm font-medium line-clamp-3 mb-2 flex-1 leading-relaxed opacity-90">{post.content}</p>
+                        {post.postType === 'SHARE' && (
+                          <div
+                            className="text-[10px] text-indigo-500 flex items-center gap-1.5 mt-2 font-bold bg-indigo-500/10 w-max px-2.5 py-1 rounded-lg border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPostIdDetail(post.idPostShare);
+                              setIsDetailModalOpen(true);
+                            }}
+                          >
+                            <Share2 className="w-3 h-3" />
+                            <span>Shared from {post.userNameShare}</span>
+                          </div>
+                        )}
+                        <div className="flex flex-col mt-4 pt-4 border-t border-slate-200/5 dark:border-slate-800/50">
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between text-[10px] text-slate-400 uppercase tracking-wider font-bold opacity-70">
+                              <span>{new Date(post.createdAt || Date.now()).toLocaleDateString()} • {post.visibility || 'PUBLIC'}</span>
+                              <div className="flex items-center gap-1 text-red-500/80">
+                                <Heart className={`w-3 h-3 ${post.liked ? 'fill-red-500' : ''}`} />
+                                <span>{post.likeCount || 0}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPostToShare(post);
+                                  setIsShareModalOpen(true);
+                                }}
+                                className="flex items-center gap-2 text-slate-500 hover:text-indigo-400 transition-colors bg-black/10 dark:bg-white/5 hover:bg-black/20 dark:hover:bg-white/10 px-3 py-1.5 rounded-lg"
+                              >
+                                <Share2 className="w-4 h-4" />
+                                <span className="text-[11px] font-bold uppercase tracking-wider">Share</span>
+                              </button>
+
+                              {(post.targetType === 'SONG' || post.targetType === 'ALBUM' || post.idSong || post.idAlbum) && (
+                                <div className="relative">
+                                  <button
+                                    className={`flex items-center gap-1.5 transition-colors p-1.5 rounded-md ${activeMenuId === post.id ? 'text-indigo-400 bg-indigo-500/10' : 'text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10'}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveMenuId(activeMenuId === post.id ? null : post.id);
+                                    }}
+                                  >
+                                    <MoreHorizontal className="w-5 h-5" />
+                                  </button>
+
+                                  {activeMenuId === post.id && (
+                                    <>
+                                      <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); }}></div>
+                                      <div
+                                        className="absolute right-0 bottom-full mb-2 w-48 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl py-2 z-[110] animate-in fade-in slide-in-from-bottom-2 duration-200"
+                                        onClick={e => e.stopPropagation()}
+                                      >
+                                        <button
+                                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-indigo-500/20 transition-all uppercase tracking-wider text-left"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setPlaylistModal({
+                                              isOpen: true,
+                                              songId: post.idSong || post.idAlbum || post.targetId,
+                                              songName: post.songName || post.content || "Track"
+                                            });
+                                            setActiveMenuId(null);
+                                          }}
+                                        >
+                                          <ListMusic className="w-4 h-4" />
+                                          Add to Playlist
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="ig-empty-state">
+                    <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                      {activeTab === 'posts' ? <Grid className="w-10 h-10 text-indigo-500" /> : <Share2 className="w-10 h-10 text-indigo-500" />}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="ig-empty-state">
-                  <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    {activeTab === 'posts' ? <Grid className="w-10 h-10 text-indigo-500" /> : <Share2 className="w-10 h-10 text-indigo-500" />}
+                    <div className="ig-empty-title">
+                      {activeTab === 'posts' ? 'Share Your Thoughts' : activeTab === 'albums' ? 'No Albums Yet' : 'No Shared Posts'}
+                    </div>
+                    <div className="text-slate-500 max-w-sm mx-auto mb-8">
+                      {activeTab === 'posts'
+                        ? 'Your posts will appear here once you start sharing with the community.'
+                        : activeTab === 'albums'
+                          ? 'Album posts will appear here when you post an album.'
+                          : 'Shared posts will appear here when you share content from others.'}
+                    </div>
+                    {isOwnProfile && activeTab === 'posts' && (
+                      <button
+                        className="btn-primary px-8 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-500/25 hover:scale-105 transition-transform"
+                        onClick={() => navigate('/')}
+                      >
+                        Create First Post
+                      </button>
+                    )}
                   </div>
-                  <div className="ig-empty-title">
-                    {activeTab === 'posts' ? 'Share Your Thoughts' : activeTab === 'albums' ? 'No Albums Yet' : 'No Shared Posts'}
-                  </div>
-                  <div className="text-slate-500 max-w-sm mx-auto mb-8">
-                    {activeTab === 'posts'
-                      ? 'Your posts will appear here once you start sharing with the community.'
-                      : activeTab === 'albums'
-                        ? 'Album posts will appear here when you post an album.'
-                        : 'Shared posts will appear here when you share content from others.'}
-                  </div>
-                  {isOwnProfile && activeTab === 'posts' && (
-                    <button
-                      className="btn-primary px-8 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-500/25 hover:scale-105 transition-transform"
-                      onClick={() => navigate('/')}
-                    >
-                      Create First Post
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            );
+          })()}
 
 
         </div>
       </main>
+
+      <SharePostModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        post={postToShare}
+        onShareSuccess={() => {
+          if (activeTab === 'posts') fetchPosts(targetId, 'OWNER');
+          else if (activeTab === 'shares') fetchPosts(targetId, 'SHARE');
+          else if (activeTab === 'albums') fetchPosts(targetId, 'OWNER');
+        }}
+      />
 
       <AddToPlaylistModal
         isOpen={playlistModal.isOpen}

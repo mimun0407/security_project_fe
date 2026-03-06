@@ -32,10 +32,11 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
   const [userAlbums, setUserAlbums] = useState([]);
   const [postTargetType, setPostTargetType] = useState('SONG'); // SONG or ALBUM
 
-  // Step 2 State
-  const [content, setContent] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+
+  // Step 2 State
+  const [content, setContent] = useState('');
   const [visibility, setVisibility] = useState('PUBLIC');
 
   // Refs
@@ -115,8 +116,22 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
     setErrors({});
     setIsLoading(true);
     try {
+      // 1. Upload Song Metadata + Audio
       const response = await songService.uploadSong(songName, genreId || "UNKNOWN", selectedMusic);
-      const songData = response.data.data || response.data;
+      let songData = response.data.data || response.data;
+
+      // 2. Upload Cover Image if selected
+      if (selectedImage && (songData.id || songData.idSong)) {
+        try {
+          await songService.updateSongImage(songData.id || songData.idSong, selectedImage);
+          // Create local object URL so draft looks correct
+          songData.imageUrl = URL.createObjectURL(selectedImage);
+        } catch (imgError) {
+          console.error("Failed to upload song image:", imgError);
+          toast.error("Song uploaded, but failed to save cover image.");
+        }
+      }
+
       setUploadedSong(songData);
       saveDraft(songData);
       setStep(2);
@@ -192,9 +207,9 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
       };
 
       if (groupId) {
-        await postService.createGroupPost(groupId, postData, selectedImage);
+        await postService.createGroupPost(groupId, postData);
       } else {
-        await postService.createPost(postData, selectedImage);
+        await postService.createPost(postData);
       }
 
       // Cleanup drafts
@@ -345,23 +360,43 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
                 {errors.music && <p className="text-[10px] text-red-500 font-bold mb-4 text-center">Please select a music file</p>}
 
                 <div className="flex flex-col gap-4">
-                  <div className="input-group">
-                    <label className="text-xs font-bold uppercase tracking-wider opacity-60 mb-1.5 block">Song Title</label>
-                    <input
-                      type="text"
-                      value={songName}
-                      onChange={(e) => {
-                        setSongName(e.target.value);
-                        if (errors.name) setErrors({ ...errors, name: false });
-                      }}
-                      placeholder="Enter song title..."
-                      className={`w-full p-3 bg-black/5 rounded-lg border transition outline-none modal-input
-                      ${errors.name ? 'border-red-500 bg-red-50' : 'border-transparent focus:border-blue-500'}`}
-                    />
-                    {errors.name && <p className="text-[10px] text-red-500 font-bold mt-1">Song title cannot be empty</p>}
+                  {/* Cover Image + Title Row */}
+                  <div className="flex gap-4">
+                    <div className="shrink-0">
+                      <label className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5 block">Cover Image</label>
+                      <div
+                        className="relative w-24 h-24 rounded-lg overflow-hidden cursor-pointer group shadow-sm border border-black/10 bg-black/5"
+                        onClick={() => imageInputRef.current.click()}
+                      >
+                        <img
+                          src={previewUrl || DEFAULT_IMAGE_PREVIEW}
+                          alt="Cover"
+                          className={`w-full h-full object-cover transition duration-300 ${!previewUrl ? 'opacity-50 grayscale hover:grayscale-0' : ''}`}
+                        />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ImageIcon className="w-5 h-5 text-white" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 input-group flex flex-col justify-end">
+                      <label className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5 block">Song Title</label>
+                      <input
+                        type="text"
+                        value={songName}
+                        onChange={(e) => {
+                          setSongName(e.target.value);
+                          if (errors.name) setErrors({ ...errors, name: false });
+                        }}
+                        placeholder="Enter song title..."
+                        className={`w-full p-3 bg-black/5 rounded-lg border transition outline-none modal-input text-sm
+                        ${errors.name ? 'border-red-500 bg-red-50' : 'border-transparent focus:border-blue-500'}`}
+                      />
+                      {errors.name && <p className="text-[10px] text-red-500 font-bold mt-1">Song title cannot be empty</p>}
+                    </div>
                   </div>
 
-                  <div className="input-group mt-4">
+                  <div className="input-group mt-2">
                     <div className="selection-container">
                       <label className={`selection-label ${errors.genre ? 'text-red-500' : ''}`}>
                         Genre {errors.genre && <span className="text-[10px] font-bold"> - Please select</span>}
@@ -453,23 +488,6 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
               )}
 
               <div className="flex gap-4 mb-4">
-                <div className="shrink-0">
-                  <label className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5 block">Cover Image</label>
-                  <div
-                    className="relative w-28 h-28 rounded-lg overflow-hidden cursor-pointer group shadow-md border border-black/10"
-                    onClick={() => imageInputRef.current.click()}
-                  >
-                    <img
-                      src={previewUrl || DEFAULT_IMAGE_PREVIEW}
-                      alt="Cover"
-                      className={`w-full h-full object-cover transition duration-300 ${!previewUrl ? 'opacity-80 grayscale' : ''}`}
-                    />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ImageIcon className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-                </div>
-
                 <div className="flex-1 flex flex-col">
                   <div className="flex justify-between items-center mb-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-wider opacity-60 block">Caption</label>

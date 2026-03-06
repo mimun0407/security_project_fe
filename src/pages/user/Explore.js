@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Music, Film, Image as ImageIcon } from 'lucide-react';
+import { Music, Film, Image as ImageIcon, MoreHorizontal, ListMusic } from 'lucide-react';
 import Sidebar from '../../components/layout/Sidebar';
+import AddToPlaylistModal from '../../components/modals/AddToPlaylistModal';
+import songService from '../../services/songService';
 import { useAuth } from '../../context/AuthContext';
 import { usePlayer } from '../../context/PlayerContext';
 import './css/Explore.css';
@@ -21,17 +23,34 @@ const Explore = () => {
     const { user } = useAuth();
     const { playTrack } = usePlayer();
 
-    const [activeTab, setActiveTab] = useState('all');
 
-    const handleItemClick = (item) => {
+    const [activeTab, setActiveTab] = useState('all');
+    const [activeMenuId, setActiveMenuId] = useState(null);
+    const [playlistModal, setPlaylistModal] = useState({
+        isOpen: false,
+        songId: null,
+        songName: ''
+    });
+
+    const handleItemClick = async (item) => {
         if (item.type === 'music') {
-            playTrack({
-                id: item.id,
-                title: item.title,
-                artist: "Explore Artist",
-                avatar: item.image,
-                url: "http://localhost:8080/api/v1/stream/demo.mp3" // Placeholder for demo
-            });
+            try {
+                const res = await songService.getSongById(item.id);
+                const fullSong = res.data?.data || res.data;
+                const mUrl = fullSong?.musicUrl;
+                if (!mUrl) return;
+                const musicLink = mUrl.startsWith('http') ? mUrl : `http://localhost:8080${mUrl}`;
+
+                playTrack({
+                    id: item.id,
+                    title: item.title,
+                    artist: "Explore Artist",
+                    avatar: item.image,
+                    url: musicLink
+                });
+            } catch (err) {
+                console.error("Failed to fetch song for playback:", err);
+            }
         }
     };
 
@@ -81,9 +100,47 @@ const Explore = () => {
                                     />
                                     <div className="explore-overlay">
                                         <div className="explore-item-title">{item.title}</div>
-                                        <div className="explore-item-meta">
-                                            {renderItemIcon(item.type)}
-                                            {item.meta}
+                                        <div className="explore-item-meta flex items-center justify-between">
+                                            <div className="flex items-center gap-1">
+                                                {renderItemIcon(item.type)}
+                                                {item.meta}
+                                            </div>
+                                            {item.type === 'music' && (
+                                                <div className="relative">
+                                                    <button
+                                                        className={`p-2 rounded-full transition-all ${activeMenuId === item.id ? 'bg-indigo-500 text-white' : 'text-white/70 hover:bg-white/20 hover:text-white'}`}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActiveMenuId(activeMenuId === item.id ? null : item.id);
+                                                        }}
+                                                    >
+                                                        <MoreHorizontal className="w-4 h-4" />
+                                                    </button>
+
+                                                    {activeMenuId === item.id && (
+                                                        <>
+                                                            <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); }}></div>
+                                                            <div className="absolute right-0 bottom-full mb-2 w-48 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-2 z-[110] animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                                                <button
+                                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-indigo-500/20 transition-all uppercase tracking-wider text-left"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setPlaylistModal({
+                                                                            isOpen: true,
+                                                                            songId: item.id,
+                                                                            songName: item.title
+                                                                        });
+                                                                        setActiveMenuId(null);
+                                                                    }}
+                                                                >
+                                                                    <ListMusic className="w-4 h-4" />
+                                                                    Add to Playlist
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -92,6 +149,13 @@ const Explore = () => {
                     </div>
                 </div>
             </main>
+
+            <AddToPlaylistModal
+                isOpen={playlistModal.isOpen}
+                onClose={() => setPlaylistModal({ ...playlistModal, isOpen: false })}
+                songId={playlistModal.songId}
+                songName={playlistModal.songName}
+            />
         </div>
     );
 };

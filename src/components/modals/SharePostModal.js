@@ -131,7 +131,6 @@ const SharePostModal = ({ isOpen, onClose, post, onShareSuccess }) => {
                                         className="bg-slate-800 border border-slate-700 text-sm rounded-lg p-2.5 focus:border-indigo-500 outline-none"
                                     >
                                         <option value="PUBLIC">Public</option>
-                                        <option value="FRIEND">Friends Only</option>
                                         <option value="PRIVATE">Only Me</option>
                                     </select>
                                 </div>
