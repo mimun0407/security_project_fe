@@ -16,6 +16,7 @@ import likeService from '../../services/likeService';
 import { usePlayer } from '../../context/PlayerContext';
 import { getUserAvatar } from '../../utils/userUtils';
 import { formatDate } from '../../utils/dateUtils';
+import { toast } from 'react-hot-toast';
 import './css/Groups.css';
 
 const GroupDetail = () => {
@@ -176,10 +177,10 @@ const GroupDetail = () => {
                 // If approved, refresh the main feed
                 fetchGroupData();
             }
-            alert(`Post ${approve ? 'approved' : 'rejected'} successfully.`);
+            toast.success(`Post ${approve ? 'approved' : 'rejected'} successfully.`);
         } catch (error) {
             console.error("Error reviewing post:", error);
-            alert("Failed to review post.");
+            toast.error("Failed to review post.");
         } finally {
             setIsReviewingPost(false);
             setReviewingPostId(null);
@@ -223,7 +224,7 @@ const GroupDetail = () => {
             setTimeout(() => setBanMessage(''), 3000);
         } catch (error) {
             const errorMsg = error.response?.data?.message || error.message || "Failed to ban user.";
-            alert(errorMsg); // using alert for simplicity on list item failure, or could set a global error state
+            toast.error(errorMsg);
         } finally {
             setIsBanning(false);
             setBanningUserId(null);
@@ -295,7 +296,7 @@ const GroupDetail = () => {
                     if (group?.role?.toUpperCase() === 'ADMIN') {
                         fetchPendingPosts();
                     }
-                    alert("Post shared successfully! If this group requires post approval, it may be pending admin review.");
+                    toast.success("Post shared successfully! If this group requires post approval, it may be pending admin review.");
                 }}
             />
             <PostDetailModal

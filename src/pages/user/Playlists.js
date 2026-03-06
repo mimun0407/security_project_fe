@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/layout/Sidebar';
 import { Plus, Music, MoreVertical, Play, Trash2, Edit2, Search as SearchIcon, X } from 'lucide-react';
 import playlistService from '../../services/playlistService';
+import { toast } from 'react-hot-toast';
 import './css/Playlists.css';
 
 const Playlists = () => {
@@ -60,10 +61,10 @@ const Playlists = () => {
             setNewPlaylist({ name: '', description: '' });
             setShowCreateModal(false);
             fetchPlaylists();
-            alert("Playlist created successfully! 🎵");
+            toast.success("Playlist created successfully! 🎵");
         } catch (error) {
             console.error("Error creating playlist:", error);
-            alert("Failed to create playlist.");
+            toast.error("Failed to create playlist.");
         } finally {
             setLoading(false);
         }

@@ -10,6 +10,7 @@ import PostDetailModal from '../../components/modals/PostDetailModal';
 import "./css/Profile.css";
 import { getUserAvatar } from "../../utils/userUtils";
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-hot-toast";
 
 function Profile() {
   const params = useParams();
@@ -226,7 +227,7 @@ function Profile() {
       }));
     } catch (err) {
       console.error("Avatar update error:", err);
-      alert(err?.response?.data?.message || "Avatar update failed");
+      toast.error(err?.response?.data?.message || "Avatar update failed");
     } finally {
       setLoading(false);
     }
@@ -259,7 +260,7 @@ function Profile() {
       setIsEditingName(false);
     } catch (err) {
       console.error("Name update error:", err);
-      alert(err?.response?.data?.message || "Name update failed");
+      toast.error(err?.response?.data?.message || "Name update failed");
     } finally {
       setLoading(false);
     }

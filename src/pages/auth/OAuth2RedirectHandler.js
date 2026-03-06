@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getUserIdFromToken } from "../../utils/jwtUtils";
 import axios from "axios";
+import { toast } from "react-hot-toast";
 
 const OAuth2RedirectHandler = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const OAuth2RedirectHandler = () => {
       // 2. Handle errors from Backend (if any)
       if (error) {
         console.error("OAuth2 Error:", error);
-        alert("Google Login failed: " + error);
+        toast.error("Google Login failed: " + error);
         navigate("/login");
         return;
       }

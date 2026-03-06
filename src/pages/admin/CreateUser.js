@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast } from "react-hot-toast";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./css/Block.css"; // Reuse modern styles
@@ -67,11 +68,11 @@ function CreateUser() {
         },
       });
 
-      alert("✨ User created successfully!");
+      toast.success("✨ User created successfully!");
       navigate("/admin");
     } catch (err) {
       console.error(err);
-      alert("❌ Error creating user! Please check again.");
+      toast.error("❌ Error creating user! Please check again.");
     } finally {
       setIsLoading(false);
     }

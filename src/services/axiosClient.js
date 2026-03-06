@@ -22,19 +22,23 @@ axiosClient.interceptors.response.use(
     if (
       error.response &&
       error.response.status === 401 &&
-      !originalRequest._retry
+      !originalRequest._retry &&
+      !originalRequest.url.includes('/auth')
     ) {
       originalRequest._retry = true;
 
-      try {
-        const refreshToken = localStorage.getItem("refreshToken");
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (!refreshToken) {
+        return Promise.reject(error);
+      }
 
+      try {
         const res = await axios.post(
           "http://localhost:8080/api/v1/auth/refresh-token",
           { refreshToken }
         );
 
-        const newToken = res.data; 
+        const newToken = res.data;
 
         localStorage.setItem("token", newToken);
 
@@ -42,7 +46,9 @@ axiosClient.interceptors.response.use(
         return axiosClient(originalRequest);
       } catch (err) {
         localStorage.clear();
-        window.location.href = "/login";
+        if (window.location.pathname !== '/login') {
+          window.location.href = "/login";
+        }
       }
     }
 

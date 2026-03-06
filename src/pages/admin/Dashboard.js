@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "../admin/css/Block.css";
 import userService from "../../services/userService";
+import { toast } from "react-hot-toast";
 
 function AdminMenu() {
   const [users, setUsers] = useState([]);
@@ -82,13 +83,12 @@ function AdminMenu() {
 
       const targetId = selectedUser.userId || selectedUser.idUser || selectedUser.id;
       await userService.updateUser(targetId, form);
-
-      alert("Update successful!");
+      toast.success("Update successful!");
       setShowUpdateModal(false);
       window.location.reload();
     } catch (error) {
       console.error("Update error:", error);
-      alert("Update failed!");
+      toast.error("Update failed!");
     }
   };
 
@@ -96,11 +96,11 @@ function AdminMenu() {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
       await userService.deleteUser(id);
-      alert("Delete successful!");
+      toast.success("Delete successful!");
       setUsers(users.filter((u) => (u.userId || u.idUser || u.id) !== id));
     } catch (error) {
       console.error("Error deleting user:", error);
-      alert("Delete failed!");
+      toast.error("Delete failed!");
     }
   };
 

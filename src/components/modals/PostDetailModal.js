@@ -8,6 +8,7 @@ import { getUserAvatar } from '../../utils/userUtils';
 import { formatDate } from '../../utils/dateUtils';
 import { useAuth } from '../../context/AuthContext';
 import { usePlayer } from '../../context/PlayerContext';
+import { toast } from 'react-hot-toast';
 import './PostDetailModal.css';
 
 const PostDetailModal = ({ isOpen, onClose, postId, onUpdate }) => {
@@ -110,7 +111,7 @@ const PostDetailModal = ({ isOpen, onClose, postId, onUpdate }) => {
             });
         } catch (error) {
             console.error("PostDetailModal: Error toggling like ->", error);
-            alert(`Error during interaction (Like). ID used: ${post.id}. Please check console.`);
+            toast.error(`Error during interaction (Like). ID used: ${post.id}. Please check console.`);
         }
     };
 

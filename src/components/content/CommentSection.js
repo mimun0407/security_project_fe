@@ -5,6 +5,7 @@ import commentService from '../../services/commentService';
 import { getUserAvatar } from '../../utils/userUtils';
 import { formatDate } from '../../utils/dateUtils';
 import { useAuth } from '../../context/AuthContext';
+import { toast } from 'react-hot-toast';
 import './CommentSection.css';
 
 /**
@@ -89,7 +90,7 @@ const CommentSection = ({ postId, onClose, totalComments, onCommentAdded }) => {
             if (onCommentAdded) onCommentAdded();
         } catch (error) {
             console.error("Error sending comment:", error);
-            alert("Failed to send comment. Please try again.");
+            toast.error("Failed to send comment. Please try again.");
         }
     };
 

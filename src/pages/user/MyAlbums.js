@@ -8,6 +8,7 @@ import {
     ChevronLeft, Loader2, Image as ImageIcon, CheckCircle2, XCircle, UploadCloud
 } from 'lucide-react';
 import '../admin/css/GenreManagement.css';
+import { toast } from 'react-hot-toast';
 import './css/MyAlbums.css';
 
 const MyAlbums = () => {
@@ -113,9 +114,9 @@ const MyAlbums = () => {
 
             setIsModalOpen(false);
             fetchAlbums();
-            alert("Operation successful!");
+            toast.success("Operation successful!");
         } catch (err) {
-            alert(getErrorMessage(err));
+            toast.error(getErrorMessage(err));
         } finally {
             setIsSubmitting(false);
         }
@@ -127,7 +128,7 @@ const MyAlbums = () => {
             await albumService.deleteAlbum(id);
             fetchAlbums();
         } catch (err) {
-            alert(getErrorMessage(err));
+            toast.error(getErrorMessage(err));
         }
     };
 
@@ -152,15 +153,15 @@ const MyAlbums = () => {
     const addSongToAlbum = async (song) => {
         // Validation 1: Song already belongs to another Album
         if (song.albumId && song.albumId !== selectedAlbumId) {
-            alert(`Warning: Song "${song.name}" already belongs to another Album! (Each song can only belong to one album).`);
+            toast.error(`Warning: Song "${song.name}" already belongs to another Album! (Each song can only belong to one album).`);
             return;
         }
 
         try {
             await albumService.addSongToAlbum(selectedAlbumId, song.id || song.idSong);
-            alert("Song added to album!");
+            toast.success("Song added to album!");
         } catch (err) {
-            alert(getErrorMessage(err));
+            toast.error(getErrorMessage(err));
         }
     };
 

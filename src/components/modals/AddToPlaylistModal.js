@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Check, Loader2, ListMusic } from 'lucide-react';
 import playlistService from '../../services/playlistService';
+import { toast } from 'react-hot-toast';
 import './css/AddToPlaylistModal.css';
 
 const AddToPlaylistModal = ({ isOpen, onClose, songId, songName }) => {
@@ -33,11 +34,11 @@ const AddToPlaylistModal = ({ isOpen, onClose, songId, songName }) => {
         try {
             setProcessingId(playlistId);
             await playlistService.addSongToPlaylist(songId, playlistId);
-            alert(`Added "${songName}" to playlist! 🎵`);
+            toast.success(`Added "${songName}" to playlist! 🎵`);
             onClose();
         } catch (error) {
             console.error("Error adding song to playlist:", error);
-            alert("Failed to add song to playlist.");
+            toast.error("Failed to add song to playlist.");
         } finally {
             setProcessingId(null);
         }

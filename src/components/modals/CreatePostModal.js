@@ -7,6 +7,7 @@ import albumService from '../../services/albumService';
 import songService from '../../services/songService';
 import postService from '../../services/postService';
 import { useAuth } from '../../context/AuthContext';
+import { toast } from 'react-hot-toast';
 import './css/CreatePostModal.css';
 
 const DRAFTS_KEY = 'bq_music_song_drafts';
@@ -123,9 +124,9 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
       console.error("Music upload error:", error);
       const msg = error?.response?.data?.message || "";
       if (msg.toLowerCase().includes("duplicate") || msg.toLowerCase().includes("exists")) {
-        alert("Warning: This song might already exist in the system.");
+        toast.error("Warning: This song might already exist in the system.");
       } else {
-        alert("Music upload failed.");
+        toast.error("Music upload failed.");
       }
     } finally {
       setIsLoading(false);
@@ -170,7 +171,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
   const handleSubmitPost = async () => {
     if (postTargetType === 'SONG' && !uploadedSong) return;
     if (postTargetType === 'ALBUM' && (!selectedAlbum || !uploadedSong)) {
-      alert("Please select an album and ensure your song is uploaded.");
+      toast.error("Please select an album and ensure your song is uploaded.");
       return;
     }
 
@@ -203,11 +204,11 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
 
       handleClose();
       onPostCreated();
-      alert(`Successfully posted ${groupId ? 'to group' : ''}! 🎵`);
+      toast.success(`Successfully posted ${groupId ? 'to group' : ''}! 🎵`);
     } catch (error) {
       console.error("Post error:", error);
       const errorMsg = error?.response?.data?.message || "Failed to post.";
-      alert(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }

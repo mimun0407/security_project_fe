@@ -5,20 +5,13 @@ import userService from "../../services/userService";
 import { getUserIdFromToken } from "../../utils/jwtUtils";
 import BQMusicLogo from "../../components/common/BQMusicLogo";
 import { getErrorMessage } from "../../utils/errorUtils";
+import { toast } from "react-hot-toast";
 import "./css/Login.css";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  // Add error state for inline display if preferred, or keep alert but with better message
-  // The user requested changes to the UI code in previous turns (Login.css alerts), 
-  // maybe I should implement inline error message like in Register.js?
-  // But Login.js currently uses alert(). I'll stick to alert() for now but with better message, 
-  // OR standardise to inline message like Register.js if I see a placeholder for it.
-  // The Login.js I view previously had no inline error state placeholder.
-  // Wait, I can add one. It's better UX.
-  const [errorMsg, setErrorMsg] = useState("");
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -30,7 +23,6 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setErrorMsg("");
 
     try {
       const data = await userService.login({ email, password });
@@ -60,7 +52,7 @@ function Login() {
       }
     } catch (error) {
       const message = getErrorMessage(error);
-      setErrorMsg(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -84,12 +76,6 @@ function Login() {
         <div className="login-section">
           <div className="login-card">
             <h2 className="login-title">Log into BQMUSIC</h2>
-
-            {errorMsg && (
-              <div className="alert-message alert-error" style={{ marginBottom: '15px' }}>
-                {errorMsg}
-              </div>
-            )}
 
             <form onSubmit={handleSubmit} className="login-form">
               <div className="form-group">
