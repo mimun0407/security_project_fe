@@ -1,6 +1,7 @@
 import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
 import { AuthProvider } from "./context/AuthContext";
+import { NotificationProvider } from "./context/NotificationContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { PlayerProvider, usePlayer } from "./context/PlayerContext";
 import { ModalProvider, useModal } from "./context/ModalContext";
@@ -54,13 +55,15 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ModalProvider>
-          <PlayerProvider>
-            <ThemeProvider>
-              <AppContent />
-            </ThemeProvider>
-          </PlayerProvider>
-        </ModalProvider>
+        <NotificationProvider>
+          <ModalProvider>
+            <PlayerProvider>
+              <ThemeProvider>
+                <AppContent />
+              </ThemeProvider>
+            </PlayerProvider>
+          </ModalProvider>
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   );

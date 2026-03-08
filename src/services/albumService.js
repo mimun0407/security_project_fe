@@ -12,6 +12,14 @@ const albumService = {
     },
 
     /**
+     * Get songs belonging to an album (This also returns album details)
+     */
+    getSongsByAlbumId: async (albumId) => {
+        const response = await axiosClient.get(`/album/songs/${albumId}`);
+        return response.data;
+    },
+
+    /**
      * Update album image via multipart upload
      * @param {string} albumId
      * @param {File} imageFile
@@ -20,8 +28,7 @@ const albumService = {
     uploadAlbumImage: async (albumId, imageFile) => {
         const formData = new FormData();
         formData.append('file', imageFile);
-        formData.append('albumId', albumId);
-        const response = await axiosClient.post("/album/update-image", formData, {
+        const response = await axiosClient.post(`/album/update-image?albumId=${albumId}`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return response.data;

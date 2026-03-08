@@ -22,6 +22,7 @@ const MyAlbums = () => {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingAlbum, setEditingAlbum] = useState(null);
+    const [updatingImageId, setUpdatingImageId] = useState(null);
 
     // Form State
     const [form, setForm] = useState({
@@ -69,11 +70,15 @@ const MyAlbums = () => {
     const handleOpenModal = (album = null) => {
         if (album) {
             setEditingAlbum(album);
+            const albumRawImage = album.albumImageUrl || album.imageUrl || album.album_image_url;
+            const albumCover = albumRawImage
+                ? (albumRawImage.startsWith('http') ? albumRawImage : (albumRawImage.startsWith('/') ? `http://localhost:8080${albumRawImage}` : `http://localhost:8080/${albumRawImage}`))
+                : null;
             setForm({
                 name: album.name,
                 description: album.description || '',
                 imageFile: null,
-                imagePreview: album.imageUrl ? `http://localhost:8080${album.imageUrl}` : null
+                imagePreview: albumCover
             });
         } else {
             setEditingAlbum(null);
@@ -137,10 +142,45 @@ const MyAlbums = () => {
             setIsModalOpen(false);
             fetchAlbums(user.idUser);
             toast.success(editingAlbum ? 'Album updated!' : 'Album created!');
+
+            // Redirect to the new album detail page if it was a create operation
+            if (!editingAlbum && albumId) {
+                navigate(`/album/${albumId}`);
+            }
         } catch (err) {
             toast.error(getErrorMessage(err));
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleQuickUpdateImage = async (albumId, file) => {
+        if (!file) return;
+
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        if (!validTypes.includes(file.type)) {
+            toast.error("Invalid image format! Please choose JPG, PNG or WEBP.");
+            return;
+        }
+
+        setUpdatingImageId(albumId);
+        try {
+            const result = await albumService.uploadAlbumImage(albumId, file);
+            // result is ApiResponse<String> where data is the new image path
+            const newImageUrl = result?.data || result;
+
+            // Update local state
+            setAlbums(prev => prev.map(album =>
+                album.id === albumId
+                    ? { ...album, imageUrl: newImageUrl }
+                    : album
+            ));
+
+            toast.success('Album cover updated!');
+        } catch (err) {
+            toast.error(getErrorMessage(err));
+        } finally {
+            setUpdatingImageId(null);
         }
     };
 
@@ -225,14 +265,48 @@ const MyAlbums = () => {
                             <div className="album-grid">
                                 {albums.map((album) => (
                                     <div key={album.id} className="album-card-premium group">
-                                        <div className="album-card-cover-wrapper">
-                                            {album.imageUrl ? (
-                                                <img src={album.imageUrl.startsWith('http') ? album.imageUrl : `http://localhost:8080${album.imageUrl}`} alt="" className="album-card-cover" />
-                                            ) : (
-                                                <div className="w-full h-full bg-indigo-500/10 flex items-center justify-center">
-                                                    <Disc className="w-16 h-16 text-indigo-500/20" />
-                                                </div>
-                                            )}
+                                        <div
+                                            className="album-card-cover-wrapper cursor-pointer"
+                                            onClick={() => navigate(`/album/${album.id}`)}
+                                        >
+                                            {(() => {
+                                                const imgPath = album.albumImageUrl || album.imageUrl || album.album_image_url;
+                                                if (imgPath) {
+                                                    const finalUrl = imgPath.startsWith('http')
+                                                        ? imgPath
+                                                        : (imgPath.startsWith('/') ? `http://localhost:8080${imgPath}` : `http://localhost:8080/${imgPath}`);
+
+                                                    return <img src={finalUrl} alt="" className="album-card-cover" onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.style.display = 'none';
+                                                        e.target.nextSibling.style.display = 'flex';
+                                                    }} />;
+                                                }
+                                                return null;
+                                            })()}
+                                            <div className="w-full h-full bg-indigo-500/10 flex items-center justify-center placeholder-div" style={{ display: (album.albumImageUrl || album.imageUrl || album.album_image_url) ? 'none' : 'flex' }}>
+                                                <Disc className="w-16 h-16 text-indigo-500/20" />
+                                            </div>
+
+                                            <div
+                                                className="album-card-quick-update-overlay"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                {updatingImageId === album.id ? (
+                                                    <Loader2 className="w-8 h-8 animate-spin text-white" />
+                                                ) : (
+                                                    <label className="cursor-pointer">
+                                                        <Camera className="w-8 h-8 text-white transition-transform hover:scale-110" />
+                                                        <input
+                                                            type="file"
+                                                            hidden
+                                                            accept="image/*"
+                                                            onChange={(e) => handleQuickUpdateImage(album.id, e.target.files[0])}
+                                                        />
+                                                    </label>
+                                                )}
+                                            </div>
+
                                             <div className="album-card-badges">
                                                 <span className="album-badge">Album</span>
                                             </div>
@@ -245,33 +319,9 @@ const MyAlbums = () => {
                                             <div className="album-card-footer">
                                                 <div className="album-card-stats">
                                                     <div className="album-card-stat">
-                                                        <Music />
-                                                        <span>{(album.songs?.length || 0)} songs</span>
+                                                        <Music className="w-3 h-3" />
+                                                        <span>{(album.songCount || 0)} songs</span>
                                                     </div>
-                                                </div>
-
-                                                <div className="album-card-actions">
-                                                    <button
-                                                        className="album-card-action-btn btn-manage-songs"
-                                                        onClick={() => handleOpenAddSong(album.id)}
-                                                        title="Manage Songs"
-                                                    >
-                                                        <ListMusic className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        className="album-card-action-btn"
-                                                        onClick={() => handleOpenModal(album)}
-                                                        title="Edit Album"
-                                                    >
-                                                        <Edit className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        className="album-card-action-btn btn-delete"
-                                                        onClick={() => handleDelete(album.id)}
-                                                        title="Delete Album"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
                                                 </div>
                                             </div>
                                         </div>

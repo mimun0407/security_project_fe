@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-    Home, Search, Compass, MessageCircle, Heart, PlusSquare, Menu,
-    Settings, Activity, Bookmark, Moon, Sun, AlertCircle, Instagram, List, Users, Disc
+    Home, Search, Compass, MessageCircle, Bell, PlusSquare, Menu,
+    Settings, Activity, Bookmark, Moon, Sun, CircleAlert as AlertCircle, Instagram, List, Users, Disc
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useModal } from '../../context/ModalContext';
+import { useNotification } from '../../context/NotificationContext';
 import '../layout/css/Sidebar.css';
 import { getUserAvatar } from '../../utils/userUtils';
 import NotificationPanel from './NotificationPanel';
@@ -17,6 +18,7 @@ const Sidebar = () => {
     const { user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const { openCreatePostModal } = useModal();
+    const { unreadCount } = useNotification();
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const menuRef = useRef(null);
@@ -111,9 +113,19 @@ const Sidebar = () => {
                     <div
                         onMouseEnter={handleNotifMouseEnter}
                         onMouseLeave={handleNotifMouseLeave}
+                        className="relative"
                     >
                         <NavItem
-                            icon={<Heart className="w-6 h-6" />}
+                            icon={
+                                <div className="relative">
+                                    <Bell className="w-6 h-6" />
+                                    {unreadCount > 0 && (
+                                        <span className="notif-badge">
+                                            {unreadCount > 9 ? '9+' : unreadCount}
+                                        </span>
+                                    )}
+                                </div>
+                            }
                             label="Notifications"
                             active={isNotificationsOpen}
                         />

@@ -12,7 +12,7 @@ import './css/CreatePostModal.css';
 
 const DRAFTS_KEY = 'bq_music_song_drafts';
 
-const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
+const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId, initialTargetType, initialTargetId, startStep, onlyUpload }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [step, setStep] = useState(1); // 1: Upload Music, 2: Post Details
@@ -28,9 +28,8 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
 
   const [selectedMusic, setSelectedMusic] = useState(null);
   const [uploadedSong, setUploadedSong] = useState(null); // Result from Step 1 (Song)
-  const [selectedAlbum, setSelectedAlbum] = useState(null); // Result from Step 1 (Album)
-  const [userAlbums, setUserAlbums] = useState([]);
   const [postTargetType, setPostTargetType] = useState('SONG'); // SONG or ALBUM
+  const [targetId, setTargetId] = useState(null);
 
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -52,10 +51,34 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
       if (savedDrafts) {
         setDrafts(JSON.parse(savedDrafts));
       }
+      setStep(1);
       fetchGenres();
-      fetchUserAlbums();
     }
   }, [isOpen]);
+
+  // Handle initial props
+  useEffect(() => {
+    if (isOpen) {
+      if (initialTargetType) {
+        setPostTargetType(initialTargetType);
+        setTargetId(initialTargetId);
+
+        // If startStep is explicitly provided, use it.
+        // Otherwise use default logic: ALBUM starts at 2 (post existing), SONG starts at 1 (upload)
+        if (startStep) {
+          setStep(startStep);
+        } else if (initialTargetType === 'ALBUM') {
+          setStep(2);
+        } else {
+          setStep(1);
+        }
+      } else {
+        setPostTargetType('SONG');
+        setTargetId(null);
+        setStep(1);
+      }
+    }
+  }, [isOpen, initialTargetType, initialTargetId, startStep]);
 
   const fetchGenres = async () => {
     try {
@@ -65,17 +88,6 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
       }
     } catch (error) {
       console.error("Failed to load genres:", error);
-    }
-  };
-
-  const fetchUserAlbums = async () => {
-    try {
-      const data = await albumService.getAllAlbums();
-      // Handle both {success: true, data: [...]} and direct array format
-      const albums = data.data || data || [];
-      setUserAlbums(Array.isArray(albums) ? albums : []);
-    } catch (error) {
-      console.error("Failed to load albums:", error);
     }
   };
 
@@ -133,6 +145,25 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
       }
 
       setUploadedSong(songData);
+
+      const songId = songData.id || songData.idSong;
+
+      // Handle onlyUpload mode: link to album (if targetId exists) and close
+      if (onlyUpload && targetId && songId) {
+        try {
+          await albumService.addSongToAlbum(targetId, songId);
+          toast.success("Song uploaded and added to album! 🎵");
+          handleClose();
+          onPostCreated();
+          return;
+        } catch (linkError) {
+          console.error("Failed to link uploaded song to album:", linkError);
+          toast.error("Song uploaded, but failed to add to album.");
+          // Fall through to step 2 anyway so user doesn't lose progress?
+          // Or just stop here.
+        }
+      }
+
       saveDraft(songData);
       setStep(2);
     } catch (error) {
@@ -146,11 +177,6 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleSelectAlbum = (album) => {
-    setSelectedAlbum(album);
-    setStep(2);
   };
 
   // Draft logic
@@ -177,33 +203,31 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
     setSongName(draft.name);
     const gId = draft.genreId || draft.idGenre || (draft.genre && draft.genre.id);
     if (gId) setGenreId(gId);
-    setPostTargetType('SONG');
     setStep(2);
     setShowDrafts(false);
   };
 
-  // Step 2: Create Post
   const handleSubmitPost = async () => {
-    if (postTargetType === 'SONG' && !uploadedSong) return;
-    if (postTargetType === 'ALBUM' && (!selectedAlbum || !uploadedSong)) {
-      toast.error("Please select an album and ensure your song is uploaded.");
+    // uploadedSong is only required for SONG target or if we're actually uploading something
+    if (!uploadedSong && postTargetType === 'SONG') {
+      toast.error("Please upload a song first.");
       return;
     }
 
     setIsLoading(true);
     try {
-      const songId = uploadedSong.id || uploadedSong.idSong;
+      const songId = uploadedSong?.id || uploadedSong?.idSong;
 
-      // If adding to album, call the album service first
-      if (postTargetType === 'ALBUM') {
-        await albumService.addSongToAlbum(selectedAlbum.id, songId);
+      // If we have a song and a target album, link them
+      if (targetId && songId) {
+        await albumService.addSongToAlbum(targetId, songId);
       }
 
       const postData = {
         content: content,
         visibility: visibility,
         targetType: postTargetType,
-        targetId: postTargetType === 'SONG' ? songId : selectedAlbum.id
+        targetId: postTargetType === 'SONG' ? (songId || targetId) : (targetId || songId)
       };
 
       if (groupId) {
@@ -237,8 +261,8 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
     setErrors({});
     setSelectedMusic(null);
     setUploadedSong(null);
-    setSelectedAlbum(null);
     setPostTargetType('SONG');
+    setTargetId(null);
     setContent('');
     setSelectedImage(null);
     setPreviewUrl(null);
@@ -433,60 +457,6 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
           ) : (
             /* STEP 2: POST DETAILS */
             <div className="step-2-content animate-in slide-in-from-right-4 duration-300">
-              {/* Target Type Toggle */}
-              <div className="flex gap-2 mb-6 p-1 bg-black/5 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setPostTargetType('SONG')}
-                  className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2
-                    ${postTargetType === 'SONG' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:bg-black/5'}`}
-                >
-                  <Music className="w-3.5 h-3.5" />
-                  Post as Single
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPostTargetType('ALBUM')}
-                  className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2
-                    ${postTargetType === 'ALBUM' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:bg-black/5'}`}
-                >
-                  <Disc className="w-3.5 h-3.5" />
-                  Add to Album
-                </button>
-              </div>
-
-              {postTargetType === 'ALBUM' && (
-                <div className="mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <label className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-2 block">Choose Album</label>
-                  <div className="album-selection-grid grid grid-cols-3 gap-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
-                    {userAlbums.length > 0 ? (
-                      userAlbums.map((album) => (
-                        <div
-                          key={album.id}
-                          onClick={() => setSelectedAlbum(album)}
-                          className={`group relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all
-                            ${selectedAlbum?.id === album.id ? 'border-blue-500 shadow-md ring-2 ring-blue-500/10' : 'border-transparent hover:border-blue-200'}`}
-                        >
-                          <img
-                            src={album.imageUrl ? `http://localhost:8080${album.imageUrl}` : DEFAULT_IMAGE_PREVIEW}
-                            alt={album.name}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${selectedAlbum?.id === album.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                            <p className="text-[10px] text-white font-bold text-center px-1 truncate w-full">{album.name}</p>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="col-span-3 py-6 text-center bg-black/5 rounded-lg border border-dashed border-black/10">
-                        <p className="text-[10px] opacity-50">No albums found.</p>
-                        <button onClick={() => navigate('/my-albums')} className="text-[10px] text-blue-500 font-bold hover:underline">Create One</button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
               <div className="flex gap-4 mb-4">
                 <div className="flex-1 flex flex-col">
                   <div className="flex justify-between items-center mb-1.5">
@@ -517,9 +487,10 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId }) => {
                   <p className="text-[11px] font-bold text-blue-900 truncate">
                     {songName}
                   </p>
-                  <div className="flex gap-2 items-center">
-                    <p className="text-[10px] text-blue-600 font-medium">
-                      Selected: {postTargetType === 'SONG' ? 'Single Track' : (selectedAlbum?.name || 'No Album Chosen')}
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Targeting</span>
+                    <p className="text-sm font-bold text-white bg-white/5 py-1 px-3 rounded-lg border border-white/5 truncate">
+                      {postTargetType === 'SONG' ? 'Single Track' : 'Add to Album'}
                     </p>
                   </div>
                 </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Play, Pause, Music, Heart, MessageCircle, Share2, MoreHorizontal, ListMusic, X, Disc } from 'lucide-react';
 import SharePostModal from '../../components/modals/SharePostModal';
 import CommentSection from '../../components/content/CommentSection';
@@ -23,6 +23,7 @@ const DEFAULT_COVER_URL = "https://images.unsplash.com/photo-1614613535308-eb5fb
 
 function NewFeed() {
   const navigate = useNavigate();
+  const { postId } = useParams();
   const [posts, setPosts] = useState([]);
   const { suggestions, handleFollow } = useSuggestions();
   const { playTrack, currentTrack, isPlaying } = usePlayer();
@@ -141,6 +142,14 @@ function NewFeed() {
     window.addEventListener('POST_CREATED', handleGlobalPostCreated);
     return () => window.removeEventListener('POST_CREATED', handleGlobalPostCreated);
   }, [fetchPosts]);
+
+  // Handle notification redirect to post detail
+  useEffect(() => {
+    if (postId) {
+      setSelectedPostIdDetail(postId);
+      setIsDetailModalOpen(true);
+    }
+  }, [postId]);
 
   const handlePlayMusic = async (post) => {
     let musicLink = post.musicLink;

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, Image as ImageIcon, Users, Lock, Globe, Shield } from 'lucide-react';
 import groupService from '../../services/groupService';
 import './css/CreateGroupModal.css';
@@ -11,6 +12,7 @@ const MOCK_IMAGES = [
 ];
 
 const CreateGroupModal = ({ isOpen, onClose, onGroupCreated }) => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -50,9 +52,13 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated }) => {
         setError(null);
 
         try {
-            await groupService.createGroup(formData);
+            const response = await groupService.createGroup(formData);
+            const groupId = response?.data;
             onGroupCreated();
             handleClose();
+            if (groupId) {
+                navigate(`/groups/${groupId}`);
+            }
         } catch (err) {
             console.error(err);
             setError("Failed to create group. Please try again.");
