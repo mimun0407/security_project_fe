@@ -265,13 +265,6 @@ const AlbumDetail = () => {
                                         <Plus className="w-4 h-4" />
                                         Upload New
                                     </button>
-                                    <button
-                                        onClick={handleOpenLibrary}
-                                        className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-2xl font-bold transition-all border border-white/5"
-                                    >
-                                        <ListMusic className="w-4 h-4 text-indigo-400" />
-                                        Add from Library
-                                    </button>
                                 </>
                             )}
                         </div>

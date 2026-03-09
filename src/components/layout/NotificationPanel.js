@@ -51,8 +51,9 @@ const NotificationPanel = ({ isOpen, onMouseEnter, onMouseLeave }) => {
 
         // 2. Navigate based on targetType
         const { targetType, targetId } = notif;
+        const normalizedType = targetType?.toUpperCase();
 
-        switch (targetType) {
+        switch (normalizedType) {
             case 'POST':
             case 'COMMENT':
                 if (targetId) {

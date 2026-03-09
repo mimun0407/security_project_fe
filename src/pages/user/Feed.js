@@ -340,49 +340,6 @@ function NewFeed() {
                             )}
                           </div>
                         </div>
-                        <div className="relative">
-                          <button
-                            className={`p-2 rounded-full transition-all ${activeMenuId === post.id ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveMenuId(activeMenuId === post.id ? null : post.id);
-                            }}
-                          >
-                            <MoreHorizontal className="w-5 h-5" />
-                          </button>
-
-                          {activeMenuId === post.id && (
-                            <>
-                              <div className="fixed inset-0 z-[110]" onClick={() => setActiveMenuId(null)}></div>
-                              <div
-                                className="absolute right-0 top-full mt-2 w-56 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-2 z-[120] animate-in fade-in zoom-in-95 duration-200"
-                                onClick={e => e.stopPropagation()}
-                              >
-                                {(post.idSong || post.idAlbum) && (
-                                  <button
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-300 hover:text-white hover:bg-indigo-500/20 transition-all uppercase tracking-wider"
-                                    onClick={() => {
-                                      setSongToPlaylist({
-                                        id: post.idSong || post.idAlbum,
-                                        name: post.songName || post.albumName || "Track"
-                                      });
-                                      setIsPlaylistModalOpen(true);
-                                      setActiveMenuId(null);
-                                    }}
-                                  >
-                                    <ListMusic className="w-4 h-4" />
-                                    Add to Playlist
-                                  </button>
-                                )}
-                                <div className="mx-2 my-1 border-t border-white/5"></div>
-                                <button className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-rose-500/70 hover:text-rose-500 hover:bg-rose-500/10 transition-all uppercase tracking-wider">
-                                  <X className="w-4 h-4" />
-                                  Not Interested
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
                       </div>
 
                       {post.postType === 'SHARE' && (
@@ -434,7 +391,7 @@ function NewFeed() {
                         />
                         <MessageCircle
                           className={`w-7 h-7 cursor-pointer transition-colors ${expandedComments[post.id] ? 'text-indigo-500' : 'text-slate-500 hover:text-indigo-500'}`}
-                          onClick={() => setExpandedComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                          onClick={() => navigate(`/posts/${post.id}`)}
                         />
                         <svg
                           onClick={() => {
