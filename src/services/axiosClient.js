@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosClient = axios.create({
-  baseURL: "http://localhost:8080/api/v1",
+  baseURL: `${process.env.REACT_APP_API_BASE_URL}/api/v1`,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
@@ -34,7 +34,7 @@ axiosClient.interceptors.response.use(
 
       try {
         const res = await axios.post(
-          "http://localhost:8080/api/v1/auth/refresh-token",
+          `${process.env.REACT_APP_API_BASE_URL}/api/v1/auth/refresh-token`,
           { refreshToken }
         );
 
