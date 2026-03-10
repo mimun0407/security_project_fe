@@ -148,6 +148,38 @@ const PostDetailModal = ({ isOpen, onClose, postId, onUpdate }) => {
 
     const handlePlayMusic = async () => {
         if (!post) return;
+
+        // 1. Handle Album Context
+        if (post.targetType === 'ALBUM' && post.albumData?.songs) {
+            const albumQueue = post.albumData.songs.map(song => ({
+                id: song.songId,
+                title: song.name,
+                artist: post.authorName,
+                avatar: song.imageUrl || post.imageUrl || post.authorAvatar,
+                url: song.musicUrl ? (song.musicUrl.startsWith('http') ? song.musicUrl : `http://localhost:8080${song.musicUrl}`) : null
+            }));
+
+            if (albumQueue.length > 0) {
+                const firstSong = albumQueue[0];
+                // Ensure URL is present for the first song
+                if (!firstSong.url) {
+                    try {
+                        const res = await songService.getSongById(firstSong.id);
+                        const fullSong = res.data?.data || res.data;
+                        firstSong.url = fullSong?.musicUrl ? (fullSong.musicUrl.startsWith('http') ? fullSong.musicUrl : `http://localhost:8080${fullSong.musicUrl}`) : null;
+                    } catch (err) {
+                        console.error("Failed to fetch first song for album queue:", err);
+                    }
+                }
+
+                if (firstSong.url) {
+                    playTrack(firstSong, albumQueue, 0);
+                    return;
+                }
+            }
+        }
+
+        // 2. Handle Single Song Context
         let musicLink = post.musicLink;
         if (!musicLink && post.idSong) {
             try {

@@ -108,13 +108,22 @@ const AlbumDetail = () => {
             return;
         }
 
+        // Construct normalized queue for the player
+        const queue = songs.map(s => ({
+            id: s.songId || s.id || s.idSong,
+            title: s.songName || s.name,
+            artist: album.nameUser || album.username || "Artist",
+            avatar: s.songImageUrl || s.imageUrl || album.imageUrl || getUserAvatar(null),
+            url: s.musicUrl ? (s.musicUrl.startsWith('http') ? s.musicUrl : `http://localhost:8080${s.musicUrl}`) : null
+        }));
+
         playTrack({
             id: song.songId || song.id || song.idSong,
             title: song.songName || song.name,
             artist: album.nameUser || album.username || "Artist",
             avatar: song.songImageUrl || song.imageUrl || album.imageUrl || getUserAvatar(null),
             url: musicUrl.startsWith('http') ? musicUrl : `http://localhost:8080${musicUrl}`
-        });
+        }, queue, index);
     };
 
     const handlePostAlbum = () => {

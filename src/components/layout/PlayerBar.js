@@ -12,7 +12,9 @@ const PlayerBar = () => {
         duration,
         seek,
         volume,
-        setVolume
+        setVolume,
+        playNextTrack,
+        playPrevTrack
     } = usePlayer();
 
     const [showVolumeSlider, setShowVolumeSlider] = useState(false);
@@ -49,7 +51,10 @@ const PlayerBar = () => {
                 {/* Controls */}
                 <div className="player-controls-wrapper">
                     <div className="player-main-controls">
-                        <button className="player-control-btn opacity-50 hover:opacity-100">
+                        <button
+                            className="player-control-btn opacity-50 hover:opacity-100"
+                            onClick={playPrevTrack}
+                        >
                             <SkipBack className="w-5 h-5 fill-current" />
                         </button>
                         <button
@@ -62,7 +67,10 @@ const PlayerBar = () => {
                                 <Play className="w-6 h-6 fill-current translate-x-0.5" />
                             )}
                         </button>
-                        <button className="player-control-btn opacity-50 hover:opacity-100">
+                        <button
+                            className="player-control-btn opacity-50 hover:opacity-100"
+                            onClick={playNextTrack}
+                        >
                             <SkipForward className="w-5 h-5 fill-current" />
                         </button>
                     </div>

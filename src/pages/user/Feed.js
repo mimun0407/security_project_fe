@@ -14,6 +14,7 @@ import { usePlayer } from '../../context/PlayerContext';
 import postService from '../../services/postService';
 import likeService from '../../services/likeService';
 import songService from '../../services/songService';
+import albumService from '../../services/albumService';
 import groupService from '../../services/groupService';
 import { toast } from 'react-hot-toast';
 import './css/Feed.css';
@@ -173,6 +174,41 @@ function NewFeed() {
   }, [postId]);
 
   const handlePlayMusic = async (post) => {
+    // 1. Handle Album Post
+    if (post.idAlbum) {
+      try {
+        const response = await albumService.getSongsByAlbumId(post.idAlbum);
+        const albumDetail = response.data || response;
+
+        if (albumDetail.songs && albumDetail.songs.length > 0) {
+          const albumQueue = albumDetail.songs.map(song => ({
+            id: song.songId,
+            title: song.songName,
+            artist: albumDetail.nameUser || albumDetail.username || post.username,
+            avatar: song.songImageUrl || albumDetail.imageUrl || post.postImage,
+            url: song.musicUrl ? (song.musicUrl.startsWith('http') ? song.musicUrl : `http://localhost:8080${song.musicUrl}`) : null
+          }));
+
+          // Fetch first song URL if missing (some responses might only have partial data)
+          const firstSong = albumQueue[0];
+          if (!firstSong.url) {
+            const res = await songService.getSongById(firstSong.id);
+            const fullSong = res.data?.data || res.data;
+            firstSong.url = fullSong?.musicUrl ? (fullSong.musicUrl.startsWith('http') ? fullSong.musicUrl : `http://localhost:8080${fullSong.musicUrl}`) : null;
+          }
+
+          if (firstSong.url) {
+            playTrack(firstSong, albumQueue, 0);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch album tracks:", err);
+        toast.error("Could not load album tracks");
+      }
+    }
+
+    // 2. Handle Single Song Post
     let musicLink = post.musicLink;
     if (!musicLink && post.idSong) {
       try {
@@ -193,7 +229,13 @@ function NewFeed() {
       artist: post.username,
       avatar: post.imageUrlSong || post.postImage || getUserAvatar(post.imageUrlUser),
       url: musicLink
-    });
+    }, posts.filter(p => p.musicLink || p.idSong).map(p => ({
+      id: p.idSong || p.id,
+      title: p.nameSong || "Original Audio",
+      artist: p.username,
+      avatar: p.imageUrlSong || p.postImage || getUserAvatar(p.imageUrlUser),
+      url: p.musicLink
+    })));
   };
 
   const toggleLike = async (postId) => {

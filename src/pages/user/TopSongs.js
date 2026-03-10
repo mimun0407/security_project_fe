@@ -47,16 +47,18 @@ const TopSongs = () => {
         setLoading(true);
         try {
             const response = await songService.getTopSongs(period, selectedGenreId);
-            const data = response.data?.data || response.data || [];
+            // Handle ApiResponse -> Slice -> content
+            const rawData = response.data?.data;
+            const songList = rawData?.content || (Array.isArray(rawData) ? rawData : []);
 
             // Normalize data if necessary
-            const normalizedSongs = Array.isArray(data) ? data.map(song => ({
+            const normalizedSongs = songList.map(song => ({
                 ...song,
-                id: song.idSong || song.id,
-                name: song.nameSong || song.name,
-                artistName: song.username || song.artist?.name || 'Unknown Artist',
-                imageUrlSnippet: song.imageUrlSong || song.imageUrlAlbum || song.imageUrl
-            })) : [];
+                id: song.songId,
+                name: song.songName,
+                artistName: song.artistName,
+                imageUrlSnippet: song.imageUrl
+            }));
 
             setSongs(normalizedSongs);
         } catch (error) {
@@ -226,28 +228,6 @@ const TopSongs = () => {
                                             <span>{(song.likeCount || 0).toLocaleString()}</span>
                                         </div>
                                     </div>
-
-                                    <div className="song-actions">
-                                        <button
-                                            className={`action-btn like ${song.isLiked ? 'active' : ''}`}
-                                            onClick={(e) => handleToggleLike(e, song.id)}
-                                        >
-                                            <Heart className={`w-5 h-5 ${song.isLiked ? 'fill-current' : ''}`} />
-                                        </button>
-                                        <button
-                                            className="action-btn"
-                                            onClick={(e) => handleOpenPlaylist(e, song)}
-                                        >
-                                            <ListMusic className="w-5 h-5" />
-                                        </button>
-                                        <button
-                                            className="action-btn"
-                                            onClick={(e) => handleOpenShare(e, song)}
-                                        >
-                                            <Share2 className="w-5 h-5" />
-                                        </button>
-                                    </div>
-
                                     <ChevronRight className="w-5 h-5 ml-4 text-slate-700 opacity-0 group-hover:opacity-100" />
                                 </div>
                             ))

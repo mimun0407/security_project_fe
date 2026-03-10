@@ -11,11 +11,13 @@ import SharePostModal from '../../components/modals/SharePostModal';
 import "./css/Profile.css";
 import { getUserAvatar } from "../../utils/userUtils";
 import { useAuth } from "../../context/AuthContext";
+import { usePlayer } from "../../context/PlayerContext";
 import { toast } from "react-hot-toast";
 
 function Profile() {
   const params = useParams();
   const { user: currentUserData, updateUser } = useAuth();
+  const { playTrack, currentTrack, isPlaying } = usePlayer();
   const navigate = useNavigate();
 
   // Handle userId from URL
@@ -208,6 +210,24 @@ function Profile() {
     }
   };
 
+  const handlePlayMusic = (post) => {
+    if (!post.musicLink && !post.idSong) return;
+
+    playTrack({
+      id: post.idSong || post.id,
+      title: post.songName || "Original Audio",
+      artist: post.authorName,
+      avatar: post.imageUrl || post.authorAvatar,
+      url: post.musicLink
+    }, userPosts.filter(p => p.musicLink || p.idSong).map(p => ({
+      id: p.idSong || p.id,
+      title: p.songName || "Original Audio",
+      artist: p.authorName,
+      avatar: p.imageUrl || p.authorAvatar,
+      url: p.musicLink
+    })));
+  };
+
   const handleAvatarUpdate = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -359,6 +379,12 @@ function Profile() {
                           <Edit2 className="w-5 h-5" />
                         </button>
                       )}
+                      <button
+                        className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-indigo-500/20"
+                        onClick={() => userPosts.length > 0 && handlePlayMusic(userPosts[0])}
+                      >
+                        <Play className="w-5 h-5 fill-white" />
+                      </button>
                     </div>
                   )}
                 </div>

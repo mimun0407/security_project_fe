@@ -13,11 +13,25 @@ export const usePlayer = () => {
 
 export const PlayerProvider = ({ children }) => {
     const [currentTrack, setCurrentTrack] = useState(null);
+    const [queue, setQueue] = useState([]);
+    const [currentIndex, setCurrentIndex] = useState(-1);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [volume, setVolume] = useState(1);
     const audioRef = useRef(new Audio());
+
+    // Refs to avoid stale closures in event listeners
+    const queueRef = useRef([]);
+    const currentIndexRef = useRef(-1);
+
+    useEffect(() => {
+        queueRef.current = queue;
+    }, [queue]);
+
+    useEffect(() => {
+        currentIndexRef.current = currentIndex;
+    }, [currentIndex]);
 
     useEffect(() => {
         const audio = audioRef.current;
@@ -25,8 +39,19 @@ export const PlayerProvider = ({ children }) => {
         const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
         const handleDurationChange = () => setDuration(audio.duration);
         const handleEnded = () => {
-            setIsPlaying(false);
-            setCurrentTime(0);
+            const q = queueRef.current;
+            const idx = currentIndexRef.current;
+
+            if (q.length > 0 && idx < q.length - 1) {
+                const nextIndex = idx + 1;
+                const nextTrack = q[nextIndex];
+                setCurrentIndex(nextIndex);
+                setCurrentTrack(nextTrack);
+                setIsPlaying(true);
+            } else {
+                setIsPlaying(false);
+                setCurrentTime(0);
+            }
         };
 
         audio.addEventListener('timeupdate', handleTimeUpdate);
@@ -44,27 +69,42 @@ export const PlayerProvider = ({ children }) => {
         if (currentTrack) {
             audioRef.current.src = currentTrack.url;
             if (isPlaying) {
-                audioRef.current.play().catch(err => console.error("Error playing audio:", err));
+                const playPromise = audioRef.current.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(err => console.error("Play error:", err));
+                }
             }
         }
     }, [currentTrack]);
 
     useEffect(() => {
         if (isPlaying) {
-            audioRef.current.play().catch(err => console.error("Error playing audio:", err));
+            if (currentTrack) {
+                const playPromise = audioRef.current.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(err => console.error("Play error:", err));
+                }
+            }
         } else {
             audioRef.current.pause();
         }
-    }, [isPlaying]);
+    }, [isPlaying, currentTrack]);
 
     useEffect(() => {
         audioRef.current.volume = volume;
     }, [volume]);
 
-    const playTrack = (track) => {
+    const playTrack = (track, newQueue = [], index = -1) => {
         if (currentTrack?.id === track.id) {
             togglePlay();
         } else {
+            if (newQueue.length > 0) {
+                setQueue(newQueue);
+                setCurrentIndex(index !== -1 ? index : newQueue.findIndex(t => t.id === track.id));
+            } else {
+                setQueue([track]);
+                setCurrentIndex(0);
+            }
             setCurrentTrack(track);
             setIsPlaying(true);
 
@@ -74,6 +114,36 @@ export const PlayerProvider = ({ children }) => {
                     console.error("Failed to record play history:", err);
                 });
             }
+        }
+    };
+
+    const playNextTrack = () => {
+        if (queue.length > 0 && currentIndex < queue.length - 1) {
+            const nextIndex = currentIndex + 1;
+            const nextTrack = queue[nextIndex];
+            setCurrentIndex(nextIndex);
+            setCurrentTrack(nextTrack);
+            setIsPlaying(true);
+        } else {
+            setIsPlaying(false);
+            setCurrentTime(0);
+        }
+    };
+
+    const playPrevTrack = () => {
+        if (currentTime > 3) {
+            seek(0);
+            return;
+        }
+
+        if (queue.length > 0 && currentIndex > 0) {
+            const prevIndex = currentIndex - 1;
+            const prevTrack = queue[prevIndex];
+            setCurrentIndex(prevIndex);
+            setCurrentTrack(prevTrack);
+            setIsPlaying(true);
+        } else {
+            seek(0);
         }
     };
 
@@ -90,6 +160,8 @@ export const PlayerProvider = ({ children }) => {
 
     const value = {
         currentTrack,
+        queue,
+        currentIndex,
         isPlaying,
         currentTime,
         duration,
@@ -97,7 +169,9 @@ export const PlayerProvider = ({ children }) => {
         setVolume,
         playTrack,
         togglePlay,
-        seek
+        seek,
+        playNextTrack,
+        playPrevTrack
     };
 
     return (
