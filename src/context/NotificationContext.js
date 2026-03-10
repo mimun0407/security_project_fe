@@ -29,7 +29,7 @@ export const NotificationProvider = ({ children }) => {
             fetchNotifications();
 
             const client = new Client({
-                brokerURL: 'ws://localhost:8080/ws',
+                brokerURL: `${process.env.REACT_APP_API_BASE_URL?.replace('http', 'ws')}/ws`,
                 connectHeaders: {},
                 debug: function (str) {
                     // console.log(str);
