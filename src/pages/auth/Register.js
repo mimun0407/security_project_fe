@@ -153,7 +153,7 @@ function Register() {
                 // Auto Login
                 try {
                     const loginRes = await axios.post(
-                        `${process.env.REACT_APP_API_BASE_URL}/api/v1/auth`,
+                        `https://bqmusicbe-production.up.railway.app/api/v1/auth`,
                         { email: email, password: form.password },
                         {
                             headers: { "Content-Type": "application/json" },
