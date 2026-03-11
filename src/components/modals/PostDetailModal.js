@@ -15,7 +15,7 @@ import { usePlayer } from '../../context/PlayerContext';
 import { toast } from 'react-hot-toast';
 import './PostDetailModal.css';
 
-const PostDetailModal = ({ isOpen, onClose, postId, onUpdate }) => {
+const PostDetailModal = ({ isOpen, onClose, postId, onUpdate, targetCommentId, targetParentId }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const { playTrack, currentTrack, isPlaying, isPaused } = usePlayer();
@@ -411,6 +411,8 @@ const PostDetailModal = ({ isOpen, onClose, postId, onUpdate }) => {
                                         postId={post.id}
                                         totalComments={post.commentCount}
                                         onCommentAdded={handleCommentAdded}
+                                        targetCommentId={targetCommentId}
+                                        targetParentId={targetParentId}
                                     />
                                 </div>
                             </div>

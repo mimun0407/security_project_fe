@@ -57,7 +57,13 @@ const NotificationPanel = ({ isOpen, onMouseEnter, onMouseLeave }) => {
             case 'POST':
             case 'COMMENT':
                 if (targetId) {
-                    navigate(`/posts/${targetId}`);
+                    if (targetId.includes(':')) {
+                        const [pId, cId, parentId] = targetId.split(':');
+                        const query = parentId ? `commentId=${cId}&parentId=${parentId}` : `commentId=${cId}`;
+                        navigate(`/posts/${pId}?${query}`);
+                    } else {
+                        navigate(`/posts/${targetId}`);
+                    }
                 }
                 break;
             case 'GROUP':

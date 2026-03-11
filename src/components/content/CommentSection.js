@@ -12,7 +12,7 @@ import './CommentSection.css';
  * CommentSection Component
  * Handles displaying, creating, editing, and deleting comments for a post.
  */
-const CommentSection = ({ postId, onClose, totalComments, onCommentAdded }) => {
+const CommentSection = ({ postId, onClose, totalComments, onCommentAdded, targetCommentId, targetParentId }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [comments, setComments] = useState([]);
@@ -54,6 +54,17 @@ const CommentSection = ({ postId, onClose, totalComments, onCommentAdded }) => {
             fetchRootComments();
         }
     }, [postId, fetchRootComments]);
+
+    // Handle auto-expansion of target parent comment from notification
+    useEffect(() => {
+        if (comments.length > 0 && targetParentId && !expandedReplies[targetParentId]) {
+            // Give a small delay to ensure rendering and then toggle
+            const timer = setTimeout(() => {
+                toggleReplies(targetParentId);
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [comments, targetParentId]);
 
     const handleSendComment = async (e) => {
         e.preventDefault();
@@ -177,7 +188,7 @@ const CommentSection = ({ postId, onClose, totalComments, onCommentAdded }) => {
     };
 
     const CommentItem = ({ comment, depth = 1, parentDepth = 0 }) => (
-        <div className={`comment-item h-auto ${(depth > 1 && depth > parentDepth) ? 'ml-6 border-l-2 border-slate-800 pl-4 mt-3' : 'mt-5'}`}>
+        <div className={`comment-item h-auto ${(depth > 1 && depth > parentDepth) ? 'ml-6 border-l-2 border-slate-800 pl-4 mt-3' : 'mt-5'} ${comment.id === targetCommentId ? 'highlighted' : ''}`}>
             <div className="flex gap-2">
                 <img
                     src={getUserAvatar(comment.userImageUrl)}
