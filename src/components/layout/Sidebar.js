@@ -118,16 +118,18 @@ const Sidebar = () => {
                         active={isActive('/search')}
                         onClick={() => handleNavigation('/search')}
                     />
-                    <NavItem
-                        icon={<Users className="w-6 h-6" />}
-                        label="Groups"
-                        active={isActive('/groups')}
-                        onClick={() => handleNavigation('/groups')}
-                    />
+                    <div className="hidden md:block">
+                        <NavItem
+                            icon={<Users className="w-6 h-6" />}
+                            label="Groups"
+                            active={isActive('/groups')}
+                            onClick={() => handleNavigation('/groups')}
+                        />
+                    </div>
                     <div
                         onMouseEnter={handleNotifMouseEnter}
                         onMouseLeave={handleNotifMouseLeave}
-                        className="relative"
+                        className="relative hidden md:block"
                     >
                         <NavItem
                             icon={
@@ -150,29 +152,31 @@ const Sidebar = () => {
                         active={isActive('/playlists')}
                         onClick={() => handleNavigation('/playlists')}
                     />
-                    <NavItem
-                        icon={<History className="w-6 h-6" />}
-                        label="History"
-                        active={isActive('/history')}
-                        onClick={() => handleNavigation('/history')}
-                    />
-                    <NavItem
-                        icon={<TrendingUp className="w-6 h-6" />}
-                        label="Top Songs"
-                        active={isActive('/top-songs')}
-                        onClick={() => handleNavigation('/top-songs')}
-                    />
-                    <NavItem
-                        icon={<Disc className="w-6 h-6" />}
-                        label="My Albums"
-                        active={isActive('/my-albums')}
-                        onClick={() => handleNavigation('/my-albums')}
-                    />
-                    <NavItem
-                        icon={<PlusSquare className="w-6 h-6" />}
-                        label="Create"
-                        onClick={() => openCreatePostModal()}
-                    />
+                    <div className="hidden md:block">
+                        <NavItem
+                            icon={<History className="w-6 h-6" />}
+                            label="History"
+                            active={isActive('/history')}
+                            onClick={() => handleNavigation('/history')}
+                        />
+                        <NavItem
+                            icon={<TrendingUp className="w-6 h-6" />}
+                            label="Top Songs"
+                            active={isActive('/top-songs')}
+                            onClick={() => handleNavigation('/top-songs')}
+                        />
+                        <NavItem
+                            icon={<Disc className="w-6 h-6" />}
+                            label="My Albums"
+                            active={isActive('/my-albums')}
+                            onClick={() => handleNavigation('/my-albums')}
+                        />
+                        <NavItem
+                            icon={<PlusSquare className="w-6 h-6" />}
+                            label="Create"
+                            onClick={() => openCreatePostModal()}
+                        />
+                    </div>
                     <div
                         className={`ig-nav-item ${isActive(`/user/userId=${user?.idUser}`) ? 'active' : ''}`}
                         onClick={() => handleNavigation(`/user/userId=${user?.idUser || ""}`)}
@@ -186,17 +190,6 @@ const Sidebar = () => {
                             />
                         </div>
                         <span className="ig-nav-label">Profile</span>
-                    </div>
-
-                    {/* Mobile More Button */}
-                    <div
-                        className="ig-nav-item md:hidden"
-                        ref={buttonRef}
-                        onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-                    >
-                        <div className="ig-icon-wrapper">
-                            <Menu className="w-6 h-6" />
-                        </div>
                     </div>
                 </nav>
 
@@ -217,6 +210,40 @@ const Sidebar = () => {
                 {/* More Menu Popup */}
                 {isMoreMenuOpen && (
                     <div ref={menuRef} className="ig-more-menu">
+                        <div className="md:hidden">
+                            <MenuItem 
+                                icon={<Users className="w-5 h-5" />} 
+                                label="Groups" 
+                                onClick={() => handleNavigation('/groups')}
+                            />
+                            <MenuItem 
+                                icon={<Bell className="w-5 h-5" />} 
+                                label="Notifications" 
+                                onClick={() => setIsNotificationsOpen(true)}
+                            />
+                            <MenuItem 
+                                icon={<History className="w-5 h-5" />} 
+                                label="History" 
+                                onClick={() => handleNavigation('/history')}
+                            />
+                            <MenuItem 
+                                icon={<TrendingUp className="w-5 h-5" />} 
+                                label="Top Songs" 
+                                onClick={() => handleNavigation('/top-songs')}
+                            />
+                            <MenuItem 
+                                icon={<Disc className="w-5 h-5" />} 
+                                label="My Albums" 
+                                onClick={() => handleNavigation('/my-albums')}
+                            />
+                            <MenuItem 
+                                icon={<PlusSquare className="w-5 h-5" />} 
+                                label="Create Post" 
+                                onClick={() => openCreatePostModal()}
+                            />
+                            <div className="h-0.5 bg-gray-700/30 my-1"></div>
+                        </div>
+
                         <MenuItem icon={<Bookmark className="w-5 h-5" />} label="Saved" />
                         <MenuItem
                             icon={theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
@@ -225,9 +252,9 @@ const Sidebar = () => {
                         />
                         <MenuItem icon={<AlertCircle className="w-5 h-5" />} label="Report a problem" />
 
-                        <div className="h-0.5 bg-gray-700 my-1"></div>
+                        <div className="h-0.5 bg-gray-700/30 my-1"></div>
 
-                        <div className="ig-menu-item" onClick={handleLogout}>
+                        <div className="ig-menu-item text-red-500 font-bold" onClick={handleLogout}>
                             Log out
                         </div>
                     </div>

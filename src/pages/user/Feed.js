@@ -322,7 +322,7 @@ function NewFeed() {
         <div className="max-w-[630px] mx-auto px-4 py-8">
           {/* Groups Section (Replaces Stories) */}
           <div className="stories-container mb-8">
-            <div className="flex items-center justify-between mb-6 px-1">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 px-1">
               <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">Your Groups</h3>
               <button 
                 onClick={() => navigate('/groups')} 

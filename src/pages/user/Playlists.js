@@ -218,15 +218,15 @@ const Playlists = () => {
                                 <div className="text-center py-20 opacity-40">Fetching songs...</div>
                             ) : songs.length > 0 ? (
                                 <div className="songs-table">
-                                    <div className="songs-header grid grid-cols-[40px_1fr_1fr_1fr] px-4 py-2 border-b border-white/5 text-[10px] uppercase font-bold tracking-wider opacity-40">
+                                    <div className="songs-header grid grid-cols-[40px_1fr] md:grid-cols-[40px_1fr_1fr_1fr] px-4 py-2 border-b border-white/5 text-[10px] uppercase font-bold tracking-wider opacity-40">
                                         <span>#</span>
                                         <span>Title</span>
-                                        <span>Artist</span>
-                                        <span>Album / Group</span>
+                                        <span className="hidden md:inline">Artist</span>
+                                        <span className="hidden md:inline">Album / Group</span>
                                     </div>
                                     <div className="songs-body py-2">
                                         {songs.map((song, index) => (
-                                            <div key={song.songId} className="song-row grid grid-cols-[40px_1fr_1fr_1fr] px-4 py-3 hover:bg-white/5 rounded-xl transition group">
+                                            <div key={song.id || index} className="song-row grid grid-cols-[40px_1fr] md:grid-cols-[40px_1fr_1fr_1fr] px-4 py-3 hover:bg-white/5 rounded-xl transition group">
                                                 <div className="flex items-center text-sm opacity-40 group-hover:hidden">{index + 1}</div>
                                                 <div className="hidden items-center group-hover:flex">
                                                     <Play
@@ -236,14 +236,25 @@ const Playlists = () => {
                                                 </div>
                                                 <div className="flex items-center gap-3 min-w-0">
                                                     <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
-                                                        {song.songImage ? <img src={song.songImage} alt="" className="w-full h-full object-cover rounded-lg" /> : <Music className="w-4 h-4 opacity-20" />}
+                                                        {(song.imageUrl || song.songImage) ? (
+                                                            <img 
+                                                                src={(song.imageUrl || song.songImage).startsWith('http') ? (song.imageUrl || song.songImage) : `${process.env.REACT_APP_API_BASE_URL}${song.imageUrl || song.songImage}`} 
+                                                                alt="" 
+                                                                className="w-full h-full object-cover rounded-lg" 
+                                                            />
+                                                        ) : (
+                                                            <Music className="w-4 h-4 opacity-20" />
+                                                        )}
                                                     </div>
-                                                    <span className="font-bold truncate text-sm">{song.songName}</span>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold truncate text-sm">{song.name || song.songName}</span>
+                                                        <span className="text-[10px] opacity-40 md:hidden truncate">{song.artistName || song.songArtistName || "Unknown Artist"}</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center text-sm opacity-60 truncate pr-2">
-                                                    {song.songArtistName || "Unknown Artist"}
+                                                <div className="hidden md:flex items-center text-sm opacity-60 truncate pr-2">
+                                                    {song.artistName || song.songArtistName || "Unknown Artist"}
                                                 </div>
-                                                <div className="flex items-center text-sm opacity-40 truncate pr-2 italic">
+                                                <div className="hidden md:flex items-center text-sm opacity-40 truncate pr-2 italic">
                                                     {song.group?.name || song.albumName || "Singles"}
                                                 </div>
                                             </div>

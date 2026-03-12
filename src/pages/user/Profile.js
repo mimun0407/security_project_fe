@@ -655,24 +655,24 @@ function Profile() {
                 <div className="text-center py-20 opacity-50">Loading songs...</div>
               ) : userSongs.length > 0 ? (
                 <div className="flex flex-col gap-3">
-                  {userSongs.map((song, index) => (
-                    <div
-                      key={song.songId || index}
-                      className="profile-song-row group"
-                      onClick={() => handlePlaySong(song)}
-                    >
-                      <div className="song-row-left">
-                        <img
-                          src={song.imageUrl ? (song.imageUrl.startsWith('http') ? song.imageUrl : `${process.env.REACT_APP_API_BASE_URL}${song.imageUrl}`) : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop"}
-                          alt={song.songName}
-                          className="song-row-img"
-                          onError={(e) => e.target.src = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop"}
-                        />
-                        <div className="song-row-info">
-                          <div className="song-row-name">{song.songName}</div>
-                          <div className="song-row-artist">{song.artistName || user.name}</div>
-                        </div>
-                      </div>
+                      {userSongs.map((song, index) => (
+                        <div
+                          key={song.id || index}
+                          className="profile-song-row group"
+                          onClick={() => handlePlaySong(song)}
+                        >
+                          <div className="song-row-left">
+                            <img
+                              src={song.imageUrl ? (song.imageUrl.startsWith('http') ? song.imageUrl : `${process.env.REACT_APP_API_BASE_URL}${song.imageUrl}`) : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop"}
+                              alt={song.name || song.songName}
+                              className="song-row-img"
+                              onError={(e) => e.target.src = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop"}
+                            />
+                            <div className="song-row-info">
+                              <div className="song-row-name">{song.name || song.songName}</div>
+                              <div className="song-row-artist">{song.artistName || user.name}</div>
+                            </div>
+                          </div>
                       <div className="song-row-right">
                         <div className="song-row-stat">
                           <Headphones className="w-4 h-4 opacity-50" />

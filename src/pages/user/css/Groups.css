@@ -179,8 +179,8 @@
 @media (max-width: 640px) {
     .groups-grid {
         grid-template-columns: 1fr;
-        gap: 1.5rem;
-        padding: 0 0.5rem;
+        gap: 1.25rem;
+        padding: 0;
     }
 
     .group-card {
@@ -188,7 +188,13 @@
     }
     
     .groups-header h1 {
-        font-size: 2.25rem;
+        font-size: 2rem;
+        text-align: center;
+        width: 100%;
+    }
+
+    .header-content {
+        width: 100%;
     }
 }
 
@@ -343,7 +349,6 @@
 @media (max-width: 1024px) {
     .groups-main {
         padding: 1.5rem;
-        padding-left: 90px;
     }
 }
 
@@ -681,8 +686,12 @@
 
 @media (max-width: 768px) {
     .group-info-card {
-        padding: 1.5rem;
+        padding: 1.25rem;
         border-radius: 20px;
+    }
+    
+    .rule-item {
+        gap: 0.75rem;
     }
 }
 

@@ -338,7 +338,7 @@ const GroupDetail = () => {
                 console.error("Failed to fetch song details:", err);
             }
         }
-        
+
         musicLink = musicLink ? (musicLink.startsWith('http') ? musicLink : `${process.env.REACT_APP_API_BASE_URL}${musicLink}`) : null;
         if (!musicLink) return;
 
@@ -796,29 +796,6 @@ const GroupDetail = () => {
                                     <div>
                                         <div>Created On</div>
                                         <div className="text-[10px] text-slate-500 uppercase">Founded {formatDate(group.createdAt)}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="group-info-card">
-                            <h3 className="flex items-center gap-2 text-lg font-bold mb-6">
-                                <Shield className="w-5 h-5 text-indigo-400" />
-                                Community Rules
-                            </h3>
-                            <div className="flex flex-col gap-4">
-                                <div className="rule-item">
-                                    <div className="rule-num">01</div>
-                                    <div>
-                                        <div className="rule-title">Be respectful</div>
-                                        <p className="text-xs text-slate-500">Treat everyone with respect and kindness.</p>
-                                    </div>
-                                </div>
-                                <div className="rule-item">
-                                    <div className="rule-num">02</div>
-                                    <div>
-                                        <div className="rule-title">No spamming</div>
-                                        <p className="text-xs text-slate-500">Keep discussions focused and relevant.</p>
                                     </div>
                                 </div>
                             </div>
