@@ -321,13 +321,14 @@ function NewFeed() {
       <main className="flex-1 lg:ml-[240px] md:ml-[80px] xl:mr-[320px] ml-0 mr-0 transition-all duration-300">
         <div className="max-w-[630px] mx-auto px-4 py-8">
           {/* Groups Section (Replaces Stories) */}
-          <div className="stories-container mb-8">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 px-1">
+          <div className="stories-container mb-8 relative">
+            <div className="absolute top-3 right-5 z-10">
               <button 
                 onClick={() => navigate('/groups')} 
-                className="text-[11px] font-extrabold text-indigo-500 hover:text-indigo-400 transition-colors uppercase tracking-wider"
+                className="text-[10px] font-bold text-slate-400 hover:text-indigo-400 transition-colors uppercase tracking-widest flex items-center gap-1"
               >
                 Explore Groups
+                <span className="text-[12px] opacity-70">›</span>
               </button>
             </div>
             <div className="flex gap-4 overflow-x-auto stories pb-2">

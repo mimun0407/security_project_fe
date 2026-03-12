@@ -125,9 +125,9 @@
 }
 
 .ig-more-menu {
-    position: absolute;
+    position: fixed;
     bottom: 85px;
-    left: 12px;
+    left: 32px;
     width: 240px;
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
@@ -155,12 +155,13 @@
 }
 
 .ig-menu-item {
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 0.85rem;
     display: flex;
     align-items: center;
     gap: 12px;
     border-radius: 12px;
     transition: background 0.2s;
+    cursor: pointer;
 }
 
 .ig-menu-item:hover {
@@ -284,25 +285,32 @@
     }
     
     .ig-more-menu {
-        bottom: 70px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: calc(100% - 40px);
-        max-width: 300px;
+        position: fixed;
+        bottom: calc(var(--mobile-nav-height) + 12px);
+        right: 12px;
+        left: auto;
+        transform: none;
+        width: 260px;
+        max-width: 80vw;
         max-height: 60vh;
         overflow-y: auto;
         animation: menuFadeInMobile 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    }
+
+    .has-player .ig-more-menu {
+        bottom: calc(var(--mobile-nav-height) + 64px + 12px);
     }
 }
 
 @keyframes menuFadeInMobile {
     from {
         opacity: 0;
-        transform: translate(-50%, 10px) scale(0.95);
+        transform: translateY(10px) scale(0.95);
     }
     to {
         opacity: 1;
-        transform: translate(-50%, 0) scale(1);
+        transform: translateY(0) scale(1);
     }
 }
 

@@ -66,11 +66,20 @@ const Sidebar = () => {
             }
         };
 
+        const handleScroll = () => {
+            if (isMoreMenuOpen) {
+                setIsMoreMenuOpen(false);
+            }
+        };
+
         document.addEventListener('mousedown', handleClickOutside);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('scroll', handleScroll);
         };
-    }, []);
+    }, [isMoreMenuOpen]);
 
     return (
         <>
