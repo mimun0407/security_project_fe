@@ -177,39 +177,55 @@ const Sidebar = () => {
                             onClick={() => openCreatePostModal()}
                         />
                     </div>
-                    <div
-                        className={`ig-nav-item ${isActive(`/user/userId=${user?.idUser}`) ? 'active' : ''}`}
-                        onClick={() => handleNavigation(`/user/userId=${user?.idUser || ""}`)}
-                    >
-                        <div className="ig-icon-wrapper">
+                    <NavItem
+                        icon={
                             <img
                                 src={getUserAvatar(user?.imageUrl)}
                                 alt="Profile"
                                 className="ig-profile-avatar"
                                 onError={(e) => e.target.src = "https://img.freepik.com/free-vector/smiling-young-man-illustration_1308-174669.jpg?w=360"}
                             />
-                        </div>
-                        <span className="ig-nav-label">Profile</span>
+                        }
+                        label="Profile"
+                        active={isActive(`/user/userId=${user?.idUser || ""}`)}
+                        onClick={() => handleNavigation(`/user/userId=${user?.idUser || ""}`)}
+                    />
+
+                    {/* Desktop Spacer - pushes Profile and More to bottom */}
+                    <div className="flex-grow hidden md:block"></div>
+
+                    <NavItem
+                        icon={
+                            <img
+                                src={getUserAvatar(user?.imageUrl)}
+                                alt="Profile"
+                                className="ig-profile-avatar"
+                                onError={(e) => e.target.src = "https://img.freepik.com/free-vector/smiling-young-man-illustration_1308-174669.jpg?w=360"}
+                            />
+                        }
+                        label="Profile"
+                        active={isActive(`/user/userId=${user?.idUser || ""}`)}
+                        onClick={() => handleNavigation(`/user/userId=${user?.idUser || ""}`)}
+                    />
+
+                    {/* More Button */}
+                    <div ref={buttonRef} className="flex-1 md:w-full">
+                        <NavItem
+                            icon={<Menu className="w-6 h-6" />}
+                            label="More"
+                            active={isMoreMenuOpen}
+                            onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                        />
                     </div>
                 </nav>
 
-                {/* Bottom Actions */}
-                <div className="ig-bottom-actions">
-                    <div
-                        className="ig-nav-item"
-                        ref={buttonRef}
-                        onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-                    >
-                        <div className="ig-icon-wrapper">
-                            <Menu className="w-6 h-6" />
-                        </div>
-                        <span className="ig-nav-label">More</span>
-                    </div>
-                </div>
+                {/* Bottom Actions - no longer needed as we moved the item */}
+                <div className="hidden"></div>
 
                 {/* More Menu Popup */}
                 {isMoreMenuOpen && (
                     <div ref={menuRef} className="ig-more-menu">
+                        {/* Mobile and Tablet Specific items */}
                         <div className="md:hidden">
                             <MenuItem 
                                 icon={<Users className="w-5 h-5" />} 
@@ -244,6 +260,7 @@ const Sidebar = () => {
                             <div className="h-0.5 bg-gray-700/30 my-1"></div>
                         </div>
 
+                        {/* Common Items for More Menu */}
                         <MenuItem icon={<Bookmark className="w-5 h-5" />} label="Saved" />
                         <MenuItem
                             icon={theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}

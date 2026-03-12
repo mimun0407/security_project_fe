@@ -15,6 +15,21 @@
     transition: width 0.4s cubic-bezier(0.05, 0.7, 0.1, 1);
     color: var(--text-primary);
     box-shadow: var(--glass-shadow);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.ig-sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.ig-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ig-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
 }
 
 .ig-sidebar:hover,
@@ -54,6 +69,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    flex: 1;
 }
 
 .ig-nav-item {
