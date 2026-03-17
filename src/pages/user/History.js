@@ -47,7 +47,7 @@ const History = () => {
         }
     };
 
-    const handlePlayTrack = async (track) => {
+    const handlePlayTrack = async (track, index) => {
         try {
             const response = await songService.getSongById(track.id);
             const songData = response.data?.data || response.data;
@@ -58,13 +58,26 @@ const History = () => {
                 return;
             }
 
+            // Prepare the queue from current history list
+            const queue = (history || []).map(h => {
+                const hUrl = h.musicUrl || h.musicLink || h.url;
+                const hImage = h.imageUrl || h.songImage || h.image;
+                return {
+                    id: h.id || h.songId,
+                    title: h.name || h.title,
+                    artist: h.artist?.name || h.artistName || 'Unknown Artist',
+                    avatar: hImage ? (hImage.startsWith('http') ? hImage : `${process.env.REACT_APP_API_BASE_URL}${hImage}`) : null,
+                    url: hUrl ? (hUrl.startsWith('http') ? hUrl : `${process.env.REACT_APP_API_BASE_URL}${hUrl}`) : null
+                };
+            }).filter(h => h.url); // Only include items with valid URL if possible (fallback to null if needed)
+
             playTrack({
                 id: songData.id || track.id,
                 title: songData.name || track.name,
                 artist: songData.artistName || track.artist?.name || 'Unknown Artist',
                 avatar: songData.imageUrl ? (songData.imageUrl.startsWith('http') ? songData.imageUrl : `${process.env.REACT_APP_API_BASE_URL}${songData.imageUrl}`) : (track.imageUrl?.startsWith('http') ? track.imageUrl : track.imageUrl ? `${process.env.REACT_APP_API_BASE_URL}${track.imageUrl}` : null),
                 url: musicLink
-            });
+            }, queue, index);
         } catch (error) {
             console.error("Failed to play track from history:", error);
             toast.error("Could not load music stream");
@@ -93,7 +106,7 @@ const History = () => {
                                     <div
                                         key={`${item.id}-${index}`}
                                         className={`history-item ${currentTrack?.id === item.id ? 'active' : ''}`}
-                                        onClick={() => handlePlayTrack(item)}
+                                        onClick={() => handlePlayTrack(item, index)}
                                     >
                                         <div className="history-index">{(index + 1).toString().padStart(2, '0')}</div>
                                         <div className="history-image-wrapper">

@@ -13,13 +13,13 @@
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1025px) {
     .history-main {
         margin-left: 240px;
     }
 }
 
-@media (max-width: 1023px) and (min-width: 769px) {
+@media (max-width: 1024px) and (min-width: 769px) {
     .history-main {
         margin-left: 80px;
     }
@@ -27,8 +27,10 @@
 
 @media (max-width: 768px) {
     .history-main {
-        padding: calc(var(--mobile-header-height) + 1rem) 1rem;
-        margin-bottom: var(--mobile-nav-height);
+        margin-left: 0 !important;
+        padding: 1rem;
+        padding-top: calc(var(--mobile-header-height) + 1rem);
+        padding-bottom: calc(var(--mobile-nav-height) + 2rem);
     }
 }
 

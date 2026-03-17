@@ -74,7 +74,7 @@ const TopSongs = () => {
         fetchTopSongs();
     }, [fetchTopSongs]);
 
-    const handlePlayTrack = async (track) => {
+    const handlePlayTrack = async (track, index) => {
         try {
             const toastId = toast.loading("Loading stream...");
             const response = await songService.getSongById(track.id);
@@ -89,13 +89,26 @@ const TopSongs = () => {
 
             musicLink = musicLink.startsWith('http') ? musicLink : `${process.env.REACT_APP_API_BASE_URL}${musicLink}`;
 
+            // Prepare the queue from current songs list
+            const queue = (songs || []).map(s => {
+                const sUrl = s.musicUrl || s.musicLink || s.url;
+                const sImage = s.imageUrlSnippet || s.imageUrl || s.songImage || s.image;
+                return {
+                    id: s.id || s.songId,
+                    title: s.name || s.songName || s.title,
+                    artist: s.artistName || s.artist?.name || 'Unknown Artist',
+                    avatar: sImage ? (sImage.startsWith('http') ? sImage : `${process.env.REACT_APP_API_BASE_URL}${sImage}`) : null,
+                    url: sUrl ? (sUrl.startsWith('http') ? sUrl : `${process.env.REACT_APP_API_BASE_URL}${sUrl}`) : null
+                };
+            }).filter(s => s.url);
+
             playTrack({
                 id: songData.id || track.id,
                 title: songData.name || track.name,
                 artist: songData.artistName || track.artistName,
                 avatar: songData.imageUrl ? (songData.imageUrl.startsWith('http') ? songData.imageUrl : `${process.env.REACT_APP_API_BASE_URL}${songData.imageUrl}`) : (track.imageUrlSnippet?.startsWith('http') ? track.imageUrlSnippet : track.imageUrlSnippet ? `${process.env.REACT_APP_API_BASE_URL}${track.imageUrlSnippet}` : null),
                 url: musicLink
-            });
+            }, queue, index);
 
             // Record play if not already the current track
             if (currentTrack?.id !== track.id) {
@@ -167,7 +180,7 @@ const TopSongs = () => {
                                     key={song.id}
                                     className={`song-item ${currentTrack?.id === song.id ? 'active' : ''}`}
                                     style={{ "--i": index }}
-                                    onClick={() => handlePlayTrack(song)}
+                                    onClick={() => handlePlayTrack(song, index)}
                                 >
                                     <div className="song-rank">
                                         {(index + 1).toString().padStart(2, '0')}

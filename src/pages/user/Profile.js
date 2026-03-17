@@ -218,7 +218,7 @@ function Profile() {
     }
   };
 
-  const handlePlayMusic = async (post) => {
+  const handlePlayMusic = async (post, index, postsList) => {
     if (!post.musicLink && !post.idSong) return;
 
     let musicLink = post.musicLink;
@@ -241,22 +241,27 @@ function Profile() {
     const avatarToUse = songMetadata?.imageUrl || post.imageUrl || post.authorAvatar;
     const fullAvatar = avatarToUse ? (avatarToUse.startsWith('http') ? avatarToUse : `${process.env.REACT_APP_API_BASE_URL}${avatarToUse}`) : getUserAvatar(user.imageUrl);
 
+    const playablePosts = postsList.filter(p => p.musicLink || p.idSong);
+    const playIndex = playablePosts.findIndex(p => p.id === post.id);
+
+    const queue = playablePosts.map(p => ({
+      id: p.idSong || p.id,
+      title: p.songName || "Original Audio",
+      artist: p.authorName || user.name,
+      avatar: p.imageUrl ? (p.imageUrl.startsWith('http') ? p.imageUrl : `${process.env.REACT_APP_API_BASE_URL}${p.imageUrl}`) : getUserAvatar(p.imageUrlUser),
+      url: p.musicLink ? (p.musicLink.startsWith('http') ? p.musicLink : `${process.env.REACT_APP_API_BASE_URL}${p.musicLink}`) : null
+    }));
+
     playTrack({
       id: songId,
       title: songMetadata?.name || post.songName || "Original Audio",
       artist: songMetadata?.artistName || post.authorName,
       avatar: fullAvatar,
       url: fullUrl
-    }, userPosts.filter(p => p.musicLink || p.idSong).map(p => ({
-      id: p.idSong || p.id,
-      title: p.songName || "Original Audio",
-      artist: p.authorName,
-      avatar: p.imageUrl ? (p.imageUrl.startsWith('http') ? p.imageUrl : `${process.env.REACT_APP_API_BASE_URL}${p.imageUrl}`) : getUserAvatar(p.imageUrlUser),
-      url: p.musicLink ? (p.musicLink.startsWith('http') ? p.musicLink : `${process.env.REACT_APP_API_BASE_URL}${p.musicLink}`) : null
-    })));
+    }, queue, playIndex !== -1 ? playIndex : 0);
   };
 
-  const handlePlaySong = async (song) => {
+  const handlePlaySong = async (song, index) => {
     let musicLink = song.musicUrl || song.musicLink;
     let songId = song.songId || song.id;
     let songMetadata = null;
@@ -277,22 +282,25 @@ function Profile() {
     const avatarToUse = songMetadata?.imageUrl || song.imageUrl;
     const fullAvatar = avatarToUse ? (avatarToUse.startsWith('http') ? avatarToUse : `${process.env.REACT_APP_API_BASE_URL}${avatarToUse}`) : getUserAvatar(user.imageUrl);
 
+    const queue = userSongs.map(s => {
+      const sLink = s.musicUrl || s.musicLink;
+      const sImage = s.imageUrl || s.songImage || s.image;
+      return {
+        id: s.songId || s.id || s.idSong,
+        title: s.songName || s.name || s.title,
+        artist: s.artistName || s.artist || user.name,
+        avatar: sImage ? (sImage.startsWith('http') ? sImage : `${process.env.REACT_APP_API_BASE_URL}${sImage}`) : getUserAvatar(user.imageUrl),
+        url: sLink ? (sLink.startsWith('http') ? sLink : `${process.env.REACT_APP_API_BASE_URL}${sLink}`) : null
+      };
+    }).filter(s => s.url);
+
     playTrack({
       id: songId,
       title: songMetadata?.name || song.songName || "Original Audio",
       artist: songMetadata?.artistName || song.artistName || user.name,
       avatar: fullAvatar,
       url: fullUrl
-    }, userSongs.map(s => {
-      const sLink = s.musicUrl || s.musicLink;
-      return {
-        id: s.songId || s.id,
-        title: s.songName || "Original Audio",
-        artist: s.artistName || user.name,
-        avatar: s.imageUrl ? (s.imageUrl.startsWith('http') ? s.imageUrl : `${process.env.REACT_APP_API_BASE_URL}${s.imageUrl}`) : getUserAvatar(user.imageUrl),
-        url: sLink ? (sLink.startsWith('http') ? sLink : `${process.env.REACT_APP_API_BASE_URL}${sLink}`) : null
-      };
-    }).filter(s => s.url));
+    }, queue, index);
   };
 
   const handleAvatarUpdate = async (e) => {
@@ -510,7 +518,14 @@ function Profile() {
                       <div
                         key={post.id}
                         className="post-card bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all group overflow-hidden cursor-pointer flex flex-col"
-                        onClick={() => { setSelectedPostIdDetail(post.id); setIsDetailModalOpen(true); }}
+                        onClick={() => { 
+                          if (post.musicLink || post.idSong) {
+                            handlePlayMusic(post, 0, displayedPosts); 
+                          } else {
+                            setSelectedPostIdDetail(post.id); 
+                            setIsDetailModalOpen(true); 
+                          }
+                        }}
                       >
                         <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-4 bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
                           <img
@@ -648,7 +663,7 @@ function Profile() {
                         <div
                           key={song.id || index}
                           className="profile-song-row group"
-                          onClick={() => handlePlaySong(song)}
+                          onClick={() => handlePlaySong(song, index)}
                         >
                           <div className="song-row-left">
                             <img

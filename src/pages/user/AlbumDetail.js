@@ -98,21 +98,27 @@ const AlbumDetail = () => {
             return;
         }
 
+        const fullMusicUrl = musicUrl.startsWith('http') ? musicUrl : `${process.env.REACT_APP_API_BASE_URL}${musicUrl}`;
+
         // Construct normalized queue for the player
-        const queue = (songs || []).map(s => ({
-            id: s.songId || s.id || s.idSong,
-            title: s.songName || s.name,
-            artist: album.nameUser || album.username || "Artist",
-            avatar: s.songImageUrl || s.imageUrl || album.imageUrl || getUserAvatar(null),
-            url: s.musicUrl ? (s.musicUrl.startsWith('http') ? s.musicUrl : `${process.env.REACT_APP_API_BASE_URL}${s.musicUrl}`) : null
-        }));
+        const queue = (songs || []).map(s => {
+            const sUrl = s.musicUrl || s.musicLink;
+            const sImage = s.songImageUrl || s.imageUrl || album.imageUrl;
+            return {
+                id: s.songId || s.id || s.idSong,
+                title: s.songName || s.name || s.title,
+                artist: album.nameUser || album.username || "Artist",
+                avatar: sImage ? (sImage.startsWith('http') ? sImage : `${process.env.REACT_APP_API_BASE_URL}${sImage}`) : getUserAvatar(null),
+                url: sUrl ? (sUrl.startsWith('http') ? sUrl : `${process.env.REACT_APP_API_BASE_URL}${sUrl}`) : null
+            };
+        }).filter(s => s.url);
 
         playTrack({
             id: songId,
             title: songMetadata?.name || song.songName || song.name,
             artist: songMetadata?.artistName || album.nameUser || album.username || "Artist",
             avatar: songMetadata?.imageUrl || song.songImageUrl || song.imageUrl || album.imageUrl || getUserAvatar(null),
-            url: musicUrl.startsWith('http') ? musicUrl : `${process.env.REACT_APP_API_BASE_URL}${musicUrl}`
+            url: fullMusicUrl
         }, queue, index);
     };
 

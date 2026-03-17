@@ -13,13 +13,13 @@
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1025px) {
     .top-songs-main {
         margin-left: 240px;
     }
 }
 
-@media (max-width: 1023px) and (min-width: 769px) {
+@media (max-width: 1024px) and (min-width: 769px) {
     .top-songs-main {
         margin-left: 80px;
     }
@@ -27,8 +27,10 @@
 
 @media (max-width: 768px) {
     .top-songs-main {
-        padding: calc(var(--mobile-header-height) + 1rem) 1rem;
-        margin-bottom: var(--mobile-nav-height);
+        margin-left: 0 !important;
+        padding: 1rem;
+        padding-top: calc(var(--mobile-header-height) + 1rem);
+        padding-bottom: calc(var(--mobile-nav-height) + 2rem);
     }
 }
 
@@ -349,7 +351,7 @@
 /* Mobile Adjustments */
 @media (max-width: 768px) {
     .top-songs-header {
-        padding: 24px 20px;
+        padding: 20px 16px;
         margin-bottom: 20px;
         border-radius: 20px;
         text-align: left;
@@ -357,17 +359,28 @@
 
     .top-songs-header .flex {
         gap: 0.5rem;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .top-songs-header .flex div {
+        padding: 0.5rem !important;
+    }
+
+    .top-songs-header .flex svg {
+        width: 1.5rem !important;
+        height: 1.5rem !important;
     }
 
     .top-songs-title {
-        font-size: 2rem;
-        letter-spacing: -1px;
-        margin-bottom: 8px;
+        font-size: 1.5rem;
+        letter-spacing: -0.5px;
+        margin-bottom: 4px;
     }
 
     .top-songs-subtitle {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         opacity: 0.8;
+        line-height: 1.4;
     }
 
     .song-stats {
@@ -375,31 +388,40 @@
     }
 
     .song-rank {
-        width: 24px;
-        font-size: 0.8rem;
+        width: 20px;
+        font-size: 0.75rem;
         opacity: 0.5;
     }
 
     .song-item {
-        padding: 10px;
+        padding: 8px 12px;
         gap: 10px;
         border-radius: 14px;
     }
 
+    .song-item:hover {
+        transform: none;
+    }
+
     .song-image-wrapper {
         margin: 0;
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
         border-radius: 6px;
     }
 
     .song-name {
-        font-size: 0.85rem;
-        margin-bottom: 1px;
+        font-size: 0.8rem;
+        margin-bottom: 0;
     }
 
     .song-artist {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
+    }
+
+    .top-songs-controls {
+        gap: 12px;
+        margin-bottom: 20px;
     }
 
     .period-tabs {
@@ -415,17 +437,21 @@
     }
     
     .period-tab {
-        padding: 6px 14px;
-        font-size: 0.7rem;
+        padding: 6px 12px;
+        font-size: 0.65rem;
         white-space: nowrap;
     }
 
     .genre-filter {
-        gap: 8px;
+        gap: 6px;
     }
 
     .genre-tag {
-        padding: 6px 14px;
-        font-size: 0.75rem;
+        padding: 5px 12px;
+        font-size: 0.7rem;
+    }
+
+    .song-actions {
+        display: none;
     }
 }

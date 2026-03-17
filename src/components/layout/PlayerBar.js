@@ -6,6 +6,8 @@ import './css/PlayerBar.css';
 const PlayerBar = () => {
     const {
         currentTrack,
+        queue,
+        currentIndex,
         isPlaying,
         togglePlay,
         currentTime,
@@ -20,6 +22,9 @@ const PlayerBar = () => {
     const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
     if (!currentTrack) return null;
+
+    const hasNext = queue.length > 0 && currentIndex < queue.length - 1;
+    const hasPrev = queue.length > 0 && (currentIndex > 0 || currentTime > 3);
 
     const formatTime = (time) => {
         if (isNaN(time)) return "0:00";
@@ -52,8 +57,9 @@ const PlayerBar = () => {
                 <div className="player-controls-wrapper">
                     <div className="player-main-controls">
                         <button
-                            className="player-control-btn opacity-50 hover:opacity-100"
+                            className={`player-control-btn ${!hasPrev ? 'opacity-20 cursor-not-allowed' : 'opacity-50 hover:opacity-100'}`}
                             onClick={playPrevTrack}
+                            disabled={!hasPrev}
                         >
                             <SkipBack className="w-5 h-5 fill-current" />
                         </button>
@@ -68,8 +74,9 @@ const PlayerBar = () => {
                             )}
                         </button>
                         <button
-                            className="player-control-btn opacity-50 hover:opacity-100"
+                            className={`player-control-btn ${!hasNext ? 'opacity-20 cursor-not-allowed' : 'opacity-50 hover:opacity-100'}`}
                             onClick={playNextTrack}
+                            disabled={!hasNext}
                         >
                             <SkipForward className="w-5 h-5 fill-current" />
                         </button>

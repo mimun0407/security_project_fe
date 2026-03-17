@@ -23,22 +23,12 @@ const Sidebar = () => {
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const menuRef = useRef(null);
     const buttonRef = useRef(null);
-    const notifTimeoutRef = useRef(null);
-
-    const handleNotifMouseEnter = () => {
-        if (notifTimeoutRef.current) clearTimeout(notifTimeoutRef.current);
-        setIsNotificationsOpen(true);
-    };
-
-    const handleNotifMouseLeave = () => {
-        if (notifTimeoutRef.current) clearTimeout(notifTimeoutRef.current);
-        notifTimeoutRef.current = setTimeout(() => {
-            setIsNotificationsOpen(false);
-        }, 300); // 300ms delay to allow moving to the panel
+    const toggleNotifications = (e) => {
+        if (e) e.stopPropagation();
+        setIsNotificationsOpen(!isNotificationsOpen);
     };
 
     const handleImmediateClose = () => {
-        if (notifTimeoutRef.current) clearTimeout(notifTimeoutRef.current);
         setIsNotificationsOpen(false);
     };
 
@@ -59,9 +49,10 @@ const Sidebar = () => {
         }
     };
 
-    // Close menu when clicking outside
+    // Close menu/notifications when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
+            // Check More menu
             if (
                 menuRef.current &&
                 !menuRef.current.contains(event.target) &&
@@ -69,6 +60,15 @@ const Sidebar = () => {
                 !buttonRef.current.contains(event.target)
             ) {
                 setIsMoreMenuOpen(false);
+            }
+
+            // Check Notifications panel (if open, and click is not on the button or panel itself)
+            // Note: NotificationPanel handles its own clicks, but Sidebar needs to close it if random area clicked
+            const isClickOnNotifPanel = event.target.closest('.notification-panel');
+            const isClickOnNotifButton = event.target.closest('.notif-toggle-btn');
+            
+            if (isNotificationsOpen && !isClickOnNotifPanel && !isClickOnNotifButton) {
+                setIsNotificationsOpen(false);
             }
         };
 
@@ -96,8 +96,8 @@ const Sidebar = () => {
                 </div>
                 <div className="flex items-center gap-4">
                     <div
-                        className="relative cursor-pointer"
-                        onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                        className="relative cursor-pointer notif-toggle-btn"
+                        onClick={toggleNotifications}
                     >
                         <Bell className="w-6 h-6" />
                         {unreadCount > 0 && (
@@ -109,7 +109,7 @@ const Sidebar = () => {
                 </div>
             </div>
 
-            <aside className={`ig-sidebar ${isNotificationsOpen ? 'force-expanded' : ''}`}>
+            <aside className="ig-sidebar">
                 {/* Logo */}
                 <div className="ig-logo-container" onClick={() => navigate('/newF')}>
                     <div className="ig-logo-icon">
@@ -145,9 +145,8 @@ const Sidebar = () => {
                         />
                     </div>
                     <div
-                        onMouseEnter={handleNotifMouseEnter}
-                        onMouseLeave={handleNotifMouseLeave}
-                        className="relative hidden md:block"
+                        className="relative hidden md:block notif-toggle-btn"
+                        onClick={toggleNotifications}
                     >
                         <NavItem
                             icon={
@@ -297,8 +296,6 @@ const Sidebar = () => {
             <NotificationPanel
                 isOpen={isNotificationsOpen}
                 onClose={() => setIsNotificationsOpen(false)}
-                onMouseEnter={handleNotifMouseEnter}
-                onMouseLeave={handleNotifMouseLeave}
             />
         </>
     );

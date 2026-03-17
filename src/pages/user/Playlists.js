@@ -76,7 +76,7 @@ const Playlists = () => {
 
 
 
-    const handlePlaySong = async (song) => {
+    const handlePlaySong = async (song, index) => {
         try {
             // Fetch the latest song details to get the music URL on-demand
             const response = await songService.getSongById(song.songId);
@@ -91,13 +91,26 @@ const Playlists = () => {
                 ? songData.musicUrl
                 : `${process.env.REACT_APP_API_BASE_URL}${songData.musicUrl}`;
 
+            // Prepare the queue from current songs list
+            const queue = (songs || []).map(s => {
+                const sUrl = s.musicUrl || s.musicLink;
+                const sImage = s.imageUrl || s.songImage || s.image;
+                return {
+                    id: s.songId || s.id || s.idSong,
+                    title: s.songName || s.name || s.title,
+                    artist: s.songArtistName || s.artistName || s.artist || "Unknown Artist",
+                    avatar: sImage ? (sImage.startsWith('http') ? sImage : `${process.env.REACT_APP_API_BASE_URL}${sImage}`) : "",
+                    url: sUrl ? (sUrl.startsWith('http') ? sUrl : `${process.env.REACT_APP_API_BASE_URL}${sUrl}`) : null
+                };
+            }).filter(s => s.url); // Only include songs with a URL
+
             playTrack({
                 id: songData.id || song.songId,
                 title: songData.name || song.songName,
                 artist: songData.artistName || song.songArtistName || "Unknown Artist",
                 avatar: songData.imageUrl || song.songImage || "",
                 url: musicLink
-            });
+            }, queue, index);
         } catch (error) {
             console.error("Error playing song:", error);
             toast.error("Failed to load song audio.");
@@ -231,7 +244,7 @@ const Playlists = () => {
                                                     <span className="group-hover:hidden">{index + 1}</span>
                                                     <Play
                                                         className="w-3 h-3 fill-indigo-500 text-indigo-500 cursor-pointer hidden group-hover:block"
-                                                        onClick={(e) => { e.stopPropagation(); handlePlaySong(song); }}
+                                                        onClick={(e) => { e.stopPropagation(); handlePlaySong(song, index); }}
                                                     />
                                                 </div>
                                                 <div className="flex items-center gap-3 min-w-0">
