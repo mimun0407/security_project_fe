@@ -11,24 +11,10 @@ const NotificationPanel = ({ isOpen, onClose, onMouseEnter, onMouseLeave }) => {
     const navigate = useNavigate();
     const { notifications, markAsRead, markAllAsRead } = useNotification();
     const { suggestions, handleFollow } = useSuggestions();
-    const closeTimeoutRef = React.useRef(null);
 
     const handleClose = (e) => {
         if (e) e.stopPropagation();
         onClose();
-    };
-
-    const handleMouseEnter = () => {
-        if (closeTimeoutRef.current) {
-            clearTimeout(closeTimeoutRef.current);
-        }
-        onMouseEnter();
-    };
-
-    const handleMouseLeave = () => {
-        closeTimeoutRef.current = setTimeout(() => {
-            onMouseLeave();
-        }, 150); // slight delay to allow smooth mouse transit
     };
 
     const groupedNotifications = useMemo(() => {
@@ -183,8 +169,8 @@ const NotificationPanel = ({ isOpen, onClose, onMouseEnter, onMouseLeave }) => {
         <>
             <div
                 className={`notification-panel ${isOpen ? 'open' : ''}`}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
+                onMouseEnter={onMouseEnter}
+                onMouseLeave={onMouseLeave}
             >
                 <div className="notification-panel-header flex justify-between items-center">
                     <h2 className="notification-panel-title">Notifications</h2>

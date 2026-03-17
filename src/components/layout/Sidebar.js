@@ -31,9 +31,10 @@ const Sidebar = () => {
     };
 
     const handleNotifMouseLeave = () => {
+        if (notifTimeoutRef.current) clearTimeout(notifTimeoutRef.current);
         notifTimeoutRef.current = setTimeout(() => {
             setIsNotificationsOpen(false);
-        }, 300);
+        }, 150); // Consistent delay
     };
 
     const isActive = (path) => location.pathname === path;
