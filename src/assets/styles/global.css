@@ -91,7 +91,8 @@ body {
 
 @media (max-width: 768px) {
     .has-player .ig-sidebar {
-        bottom: calc(var(--mobile-nav-height) + 10px) !important;
+        /* On mobile, keep sidebar at bottom, player bar will be above it */
+        bottom: 0 !important;
     }
 }
 

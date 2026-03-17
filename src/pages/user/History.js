@@ -89,10 +89,10 @@ const History = () => {
     };
 
     return (
-        <div className="history-container">
+        <div className="history-container bg-slate-950 min-h-screen">
             <Sidebar />
 
-            <main className="history-main">
+            <main className="history-main lg:ml-[240px] md:ml-[80px] ml-0 transition-all duration-300">
                 <div className="history-wrapper">
                     <header className="history-header">
                         <h1 className="history-title">Listening History</h1>

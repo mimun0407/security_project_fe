@@ -10,27 +10,16 @@
     padding: 2rem;
     display: flex;
     justify-content: center;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@media (min-width: 1025px) {
-    .history-main {
-        margin-left: 240px;
-    }
-}
-
-@media (max-width: 1024px) and (min-width: 769px) {
-    .history-main {
-        margin-left: 80px;
-    }
 }
 
 @media (max-width: 768px) {
     .history-main {
-        margin-left: 0 !important;
         padding: 1rem;
         padding-top: calc(var(--mobile-header-height) + 1rem);
         padding-bottom: calc(var(--mobile-nav-height) + 2rem);
+        justify-content: flex-start;
+        align-items: flex-start;
+        overflow-x: hidden;
     }
 }
 
@@ -274,10 +263,18 @@
     .history-track-name {
         font-size: 0.9rem;
         margin-bottom: 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
     }
 
     .history-track-artist {
         font-size: 0.75rem;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .history-actions {

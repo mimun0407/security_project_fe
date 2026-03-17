@@ -21,11 +21,12 @@
 @media (max-width: 768px) {
     .player-bar-container {
         bottom: var(--mobile-nav-height);
-        height: 64px;
-        padding: 0 12px;
-        background: rgba(15, 23, 42, 0.95);
+        height: 70px;
+        padding: 0 16px;
+        background: #1e293b; /* Solid secondary background */
         border-top: 1px solid rgba(255, 255, 255, 0.1);
-        z-index: 1001;
+        z-index: 1004; /* Just below sidebar (1005) but above content */
+        box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.3);
     }
 }
 

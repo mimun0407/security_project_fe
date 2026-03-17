@@ -47,6 +47,13 @@ const PlayerBar = () => {
             <div className="player-bar-content">
                 {/* Track Info */}
                 <div className="player-track-info">
+                    {currentTrack.avatar && (
+                        <img 
+                            src={currentTrack.avatar} 
+                            alt={currentTrack.title} 
+                            className="player-track-avatar"
+                        />
+                    )}
                     <div className="player-track-details min-w-0">
                         <div className="player-track-title truncate">{currentTrack.title}</div>
                         <div className="player-track-artist truncate">{currentTrack.artist || "Unknown Artist"}</div>

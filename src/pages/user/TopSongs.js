@@ -127,10 +127,10 @@ const TopSongs = () => {
     ];
 
     return (
-        <div className="top-songs-container">
+        <div className="top-songs-container bg-slate-950 min-h-screen">
             <Sidebar />
 
-            <main className="top-songs-main">
+            <main className="top-songs-main lg:ml-[240px] md:ml-[80px] ml-0 transition-all duration-300">
                 <div className="top-songs-wrapper">
                     <header className="top-songs-header">
                         <div className="flex items-center gap-4 mb-4">
