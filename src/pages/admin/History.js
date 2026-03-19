@@ -10,7 +10,9 @@ import {
     Database,
     Loader2,
     Code,
-    ChevronRight
+    ChevronRight,
+    Trash2,
+    X
 } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import "./css/AdminDashboard.css";
