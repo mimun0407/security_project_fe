@@ -164,7 +164,6 @@ const Search = () => {
             <main className="search-main lg:ml-[240px] md:ml-[80px] ml-0 transition-all duration-300">
                 <div className="search-wrapper">
                     <header className="search-header">
-                        <h1 className="search-title">Search</h1>
                         <div className="search-bar-container">
                             <SearchIcon className={`search-icon w-5 h-5 ${loading ? 'animate-pulse text-indigo-500' : ''}`} />
                             <input

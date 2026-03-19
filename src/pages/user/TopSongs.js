@@ -109,11 +109,6 @@ const TopSongs = () => {
                 avatar: songData.imageUrl ? (songData.imageUrl.startsWith('http') ? songData.imageUrl : `${process.env.REACT_APP_API_BASE_URL}${songData.imageUrl}`) : (track.imageUrlSnippet?.startsWith('http') ? track.imageUrlSnippet : track.imageUrlSnippet ? `${process.env.REACT_APP_API_BASE_URL}${track.imageUrlSnippet}` : null),
                 url: musicLink
             }, queue, index);
-
-            // Record play if not already the current track
-            if (currentTrack?.id !== track.id) {
-                songService.recordPlay(track.id).catch(console.error);
-            }
         } catch (error) {
             console.error("Failed to play track:", error);
             toast.error("Could not load music stream");

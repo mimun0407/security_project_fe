@@ -596,3 +596,56 @@
         font-size: 0.75rem;
     }
 }
+
+/* --- POST PLAY OVERLAY --- */
+.post-play-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.post-card:hover .post-play-overlay {
+    background: rgba(0, 0, 0, 0.2);
+    opacity: 1;
+}
+
+.post-play-btn {
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 1.25rem;
+    border-radius: 50%;
+    transform: scale(0.8);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.post-card:hover .post-play-btn {
+    transform: scale(1);
+}
+
+.post-play-btn:hover {
+    background: #6366f1; /* Using indigo-500 equivalent if var is not defined */
+    border-color: transparent;
+    transform: scale(1.1) !important;
+    box-shadow: 0 0 25px rgba(99, 102, 241, 0.5);
+}
+
+.post-play-btn.active {
+    background: #6366f1;
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}

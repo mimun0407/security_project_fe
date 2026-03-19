@@ -18,7 +18,7 @@ import { toast } from "react-hot-toast";
 function Profile() {
   const params = useParams();
   const { updateUser } = useAuth();
-  const { playTrack } = usePlayer();
+  const { playTrack, currentTrack, isPlaying } = usePlayer();
   const navigate = useNavigate();
 
   // Handle userId from URL
@@ -195,6 +195,7 @@ function Profile() {
           idSong: p.idSong || (p.targetType === 'SONG' ? p.targetId : null),
           idAlbum: p.idAlbum || (p.targetType === 'ALBUM' ? p.targetId : null),
           playCount: p.playCount || 0,
+          visibility: p.visibility || 'PUBLIC',
         };
       }) : [];
       setUserPosts(mappedList);
@@ -504,9 +505,10 @@ function Profile() {
           </div>
 
           {(activeTab === 'posts' || activeTab === 'albums') && (() => {
-            const displayedPosts = activeTab === 'albums'
+            const displayedPosts = (activeTab === 'albums'
               ? userPosts.filter(p => p.postType === 'OWNER' && p.targetType === 'ALBUM')
-              : userPosts.filter(p => p.postType === 'SHARE' || (p.postType === 'OWNER' && p.targetType !== 'ALBUM'));
+              : userPosts.filter(p => p.postType === 'SHARE' || (p.postType === 'OWNER' && p.targetType !== 'ALBUM')))
+              .filter(p => isOwnProfile || p.visibility === 'PUBLIC');
 
             return (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -519,12 +521,8 @@ function Profile() {
                         key={post.id}
                         className="post-card bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all group overflow-hidden cursor-pointer flex flex-col"
                         onClick={() => { 
-                          if (post.musicLink || post.idSong) {
-                            handlePlayMusic(post, 0, displayedPosts); 
-                          } else {
-                            setSelectedPostIdDetail(post.id); 
-                            setIsDetailModalOpen(true); 
-                          }
+                          setSelectedPostIdDetail(post.id); 
+                          setIsDetailModalOpen(true); 
                         }}
                       >
                         <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-4 bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
@@ -533,6 +531,23 @@ function Profile() {
                             alt="Post Media"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
+                          {(post.musicLink || post.idSong) && (
+                            <div className="post-play-overlay">
+                              <button 
+                                className={`post-play-btn ${currentTrack?.id === (post.idSong || post.id) && isPlaying ? 'active' : ''}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePlayMusic(post, 0, displayedPosts);
+                                }}
+                              >
+                                {currentTrack?.id === (post.idSong || post.id) && isPlaying ? (
+                                  <Pause className="w-8 h-8 fill-white" />
+                                ) : (
+                                  <Play className="w-8 h-8 fill-white ml-1" />
+                                )}
+                              </button>
+                            </div>
+                          )}
                         </div>
                         <p className="text-sm font-medium line-clamp-3 mb-2 flex-1 leading-relaxed opacity-90">{post.content}</p>
                         {post.postType === 'SHARE' && (
@@ -659,7 +674,7 @@ function Profile() {
                 <div className="text-center py-20 opacity-50">Loading songs...</div>
               ) : userSongs.length > 0 ? (
                 <div className="flex flex-col gap-3">
-                      {userSongs.map((song, index) => (
+                      {userSongs.filter(song => isOwnProfile || song.visibility === 'PUBLIC').map((song, index) => (
                         <div
                           key={song.id || index}
                           className="profile-song-row group"
