@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { 
     Users, 
     Music, 
-    History, 
     LayoutDashboard, 
     ArrowLeft, 
     LogOut,
@@ -22,7 +21,6 @@ const AdminLayout = ({ children }) => {
     const menuItems = [
         { id: 'dashboard', label: 'User Management', icon: <Users size={20} />, path: '/admin' },
         { id: 'genres', label: 'Genre Management', icon: <Music size={20} />, path: '/admin/genres' },
-        { id: 'history', label: 'System History', icon: <History size={20} />, path: '/admin/history' },
     ];
 
     const handleLogout = async () => {

@@ -3,7 +3,6 @@ import List from "../pages/common/List";
 import Login from "../pages/auth/Login";
 import UserMenu from "../pages/user/Profile";
 import AdminMenu from "../pages/admin/Dashboard";
-import AdminHistory from "../pages/admin/History";
 import UserHistory from "../pages/user/History";
 import Register from "../pages/auth/Register";
 import ForgotPassword from "../pages/auth/ForgotPassword";
@@ -46,7 +45,6 @@ function AppRoutes() {
                 
                 {/* Admin Routes with AdminLayout */}
                 <Route path="/admin" element={<AdminLayout><AdminMenu /></AdminLayout>} />
-                <Route path="/admin/history" element={<AdminLayout><AdminHistory /></AdminLayout>} />
                 <Route path="/admin/genres" element={<AdminLayout><GenreManagement /></AdminLayout>} />
                 
                 {/* User Routes */}
