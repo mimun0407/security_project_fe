@@ -101,9 +101,9 @@ const userService = {
      * @returns {Promise<Object>} Response data
      */
     updateUser: async (userId, formData) => {
-        const response = await axiosClient.put(`/user/userId/${userId}`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        // The new backend endpoint expects isActive as a RequestParam
+        const isActive = formData.get("isActive");
+        const response = await axiosClient.put(`/user/userId/${userId}?isActive=${isActive}`);
         return response.data;
     },
 

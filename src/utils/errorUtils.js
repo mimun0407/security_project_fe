@@ -15,6 +15,7 @@ export const ERROR_CODES = {
     REFRESH_TOKEN_NF: "Invalid login session. Please log in again.",
     REFRESH_TOKEN_EXPIRED: "Login session expired. Please log in again.",
     REGISTER_INVALID: "Email not verified or registration session expired.",
+    USER_BLOCK: "Your account has been banned. Please contact the administrator for support.",
 
     // PASSWORD / OTP / EMAIL
     PASSWORD_INVALID: "Passwords do not match.",

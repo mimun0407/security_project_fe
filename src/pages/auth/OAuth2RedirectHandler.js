@@ -25,7 +25,8 @@ const OAuth2RedirectHandler = () => {
       // 2. Handle errors from Backend (if any)
       if (error) {
         console.error("OAuth2 Error:", error);
-        toast.error("Google Login failed: " + error);
+        const userFriendlyMessage = getErrorMessage(error);
+        toast.error(userFriendlyMessage);
         navigate("/login");
         return;
       }

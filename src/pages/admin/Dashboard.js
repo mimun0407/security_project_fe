@@ -61,7 +61,7 @@ function AdminMenu() {
   };
 
   const handleToggleStatus = async (user) => {
-    const targetId = user.userId || user.idUser || user.id;
+    const targetId = user.id || user.userId || user.idUser;
     const currentStatus = user.isActive ?? user.is_active;
     const newStatus = !currentStatus;
     
@@ -140,7 +140,7 @@ function AdminMenu() {
                 {loading && users.length === 0 ? (
                     <tr><td colSpan="3" className="text-center py-10"><Loader2 className="animate-spin inline mr-2" /> Loading accounts...</td></tr>
                 ) : filteredUsers.length > 0 ? filteredUsers.map((user, i) => {
-                  const targetId = user.userId || user.idUser || user.id;
+                  const targetId = user.id || user.userId || user.idUser;
                   const isActive = user.isActive ?? user.is_active;
                   return (
                     <tr key={targetId || i}>
