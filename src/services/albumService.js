@@ -7,9 +7,7 @@ const albumService = {
      * @returns {Promise<Object>} Response data
      */
     createAlbum: async (albumData) => {
-        const response = await axiosClient.post("/album", albumData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await axiosClient.post("/album", albumData);
         return response.data;
     },
 
