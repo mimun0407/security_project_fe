@@ -231,7 +231,7 @@ const Playlists = () => {
                                 <div className="text-center py-20 opacity-40">Fetching songs...</div>
                             ) : songs.length > 0 ? (
                                 <div className="songs-table">
-                                    <div className="songs-header grid grid-cols-[40px_1fr] md:grid-cols-[40px_1fr_1fr_1fr] px-4 py-2 border-b border-white/5 text-[10px] uppercase font-bold tracking-wider opacity-40">
+                                    <div className="playlist-songs-header px-4 py-2 border-b border-white/5 text-[10px] uppercase font-bold tracking-wider opacity-40">
                                         <span>#</span>
                                         <span>Title</span>
                                         <span className="hidden md:inline">Artist</span>
@@ -239,7 +239,7 @@ const Playlists = () => {
                                     </div>
                                     <div className="songs-body py-2">
                                         {songs.map((song, index) => (
-                                            <div key={song.id || index} className="song-row grid grid-cols-[40px_1fr] md:grid-cols-[40px_1fr_1fr_1fr] px-4 py-3 hover:bg-white/5 rounded-xl transition group">
+                                            <div key={song.id || index} className="playlist-song-row px-4 py-3 hover:bg-white/5 rounded-xl transition group">
                                                 <div className="flex items-center justify-center text-sm opacity-40">
                                                     <span className="group-hover:hidden">{index + 1}</span>
                                                     <Play
