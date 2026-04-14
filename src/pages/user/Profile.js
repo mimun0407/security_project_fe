@@ -111,7 +111,8 @@ function Profile() {
         }
 
 
-        setIsFollowing(userData.isFollowed || false);
+        // Recognition for isFollowed or isFollowing
+        setIsFollowing(userData.isFollowed || userData.isFollowing || false);
 
         // Fetch user stats
         try {
@@ -124,8 +125,11 @@ function Profile() {
             followingCount: rawStats.followingCount || 0
           });
 
-          if (rawStats.hasOwnProperty('isFollowing') && !isOwn) {
-            setIsFollowing(rawStats.isFollowing);
+           if (!isOwn) {
+            const hasFollowStatus = rawStats.hasOwnProperty('isFollowing') || rawStats.hasOwnProperty('isFollowed');
+            if (hasFollowStatus) {
+              setIsFollowing(rawStats.isFollowing || rawStats.isFollowed);
+            }
           }
         } catch (statsErr) {
           console.error("Error fetching user stats:", statsErr);
@@ -367,10 +371,19 @@ function Profile() {
     }
   };
 
-  const handleFollowToggle = async () => {
+   const handleFollowToggle = async () => {
     if (!user || !targetId) return;
     const originalFollowState = isFollowing;
+    
+    // Optimistic Update
     setIsFollowing(!originalFollowState);
+    setStats(prev => ({
+      ...prev,
+      followerCount: originalFollowState 
+        ? Math.max(0, prev.followerCount - 1) 
+        : prev.followerCount + 1
+    }));
+
     try {
       if (originalFollowState) {
         await userService.unfollowUser(targetId);
@@ -379,7 +392,15 @@ function Profile() {
       }
     } catch (err) {
       console.error("Error changing follow status:", err);
+      // Revert on error
       setIsFollowing(originalFollowState);
+      setStats(prev => ({
+        ...prev,
+        followerCount: originalFollowState 
+          ? prev.followerCount 
+          : Math.max(0, prev.followerCount - 1)
+      }));
+      toast.error("Failed to update follow status");
     }
   };
 

@@ -269,17 +269,22 @@ const AlbumManagement = () => {
                                             )}
                                         </div>
                                         <input type="file" id="album-cover" hidden onChange={handleFileChange} accept="image/*" />
-                                        {formErrors.image && <p className="text-[11px] text-red-500 mt-2 font-medium px-4">{formErrors.image}</p>}
+                                        {formErrors.image && <p className="validation-error centered">{formErrors.image}</p>}
                                     </div>
 
                                     <div className="mb-3">
                                         <label className="form-label text-[10px] font-bold uppercase tracking-wider opacity-60">Album Name</label>
                                         <input
-                                            className={`form-control ${formErrors.name ? 'is-invalid' : ''}`}
+                                            className={`form-control-modern ${formErrors.name ? 'is-invalid border-red-500 bg-red-50' : ''}`}
                                             value={form.name}
-                                            onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                            onChange={(e) => {
+                                                setForm({ ...form, name: e.target.value });
+                                                if (formErrors.name) setFormErrors({ ...formErrors, name: null });
+                                            }}
+                                            placeholder="Enter album name..."
                                             required
                                         />
+                                        {formErrors.name && <p className="validation-error">{formErrors.name}</p>}
                                     </div>
                                     <div className="mb-0">
                                         <label className="form-label text-[10px] font-bold uppercase tracking-wider opacity-60">Description</label>

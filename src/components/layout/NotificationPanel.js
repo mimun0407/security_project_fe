@@ -9,7 +9,7 @@ import { getUserAvatar } from '../../utils/userUtils';
 
 const NotificationPanel = ({ isOpen, onClose, onMouseEnter, onMouseLeave }) => {
     const navigate = useNavigate();
-    const { notifications, markAsRead, markAllAsRead } = useNotification();
+    const { notifications, markAsRead, markAllAsRead, refreshNotifications } = useNotification();
     const { suggestions, handleFollow } = useSuggestions();
 
     const handleClose = (e) => {
@@ -71,15 +71,27 @@ const NotificationPanel = ({ isOpen, onClose, onMouseEnter, onMouseLeave }) => {
     };
 
     const handleToggleFollowNotification = async (notif) => {
+        const actorId = notif.actor?.userId || notif.actor?.idUser || notif.actor?.id || notif.userId || notif.userIdFrom || (notif.actionType === 'FOLLOW' ? notif.targetId : null);
+        
+        if (!actorId) {
+            console.error("Could not resolve actor ID from notification:", notif);
+            toast.error("User ID not found");
+            return;
+        }
+
         try {
             if (notif.isFollowed) {
-                await userService.unfollowUser(notif.userId || notif.userIdFrom);
+                await userService.unfollowUser(actorId);
             } else {
-                await userService.followUser(notif.userId || notif.userIdFrom);
+                await userService.followUser(actorId);
             }
-            // Ideally notify parent or refresh
+            
+            // Trigger a refresh of notifications to sync UI state
+            if (refreshNotifications) refreshNotifications();
         } catch (error) {
             console.error("Error toggling follow status:", error);
+            const msg = error.response?.data?.message || "Failed to update follow status";
+            toast.error(msg);
         }
     };
 

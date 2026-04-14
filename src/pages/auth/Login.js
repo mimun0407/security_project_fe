@@ -12,6 +12,7 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -20,8 +21,19 @@ function Login() {
     window.location.href = `${process.env.REACT_APP_API_BASE_URL}/oauth2/authorization/google`;
   };
 
-  const handleSubmit = async (e) => {
+   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Simple validation
+    let errors = {};
+    if (!email.trim()) errors.email = "Email is required";
+    if (!password.trim()) errors.password = "Password is required";
+    
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -78,26 +90,32 @@ function Login() {
             <h2 className="login-title">Log into BQMUSIC</h2>
 
             <form onSubmit={handleSubmit} className="login-form">
-              <div className="form-group">
+               <div className="form-group">
                 <input
                   type="email"
-                  className="form-input"
+                  className={`form-input ${fieldErrors.email ? 'border-red-500 bg-red-50' : ''}`}
                   placeholder="Email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: null });
+                  }}
                 />
+                {fieldErrors.email && <p className="validation-error">{fieldErrors.email}</p>}
               </div>
 
-              <div className="form-group">
+               <div className="form-group">
                 <input
                   type="password"
-                  className="form-input"
+                  className={`form-input ${fieldErrors.password ? 'border-red-500 bg-red-50' : ''}`}
                   placeholder="Password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: null });
+                  }}
                 />
+                {fieldErrors.password && <p className="validation-error">{fieldErrors.password}</p>}
               </div>
 
               <button

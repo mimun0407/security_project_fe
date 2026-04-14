@@ -376,7 +376,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId, initialTarge
                     </>
                   )}
                 </div>
-                {errors.music && <p className="text-[10px] text-red-500 font-bold mb-4 text-center">Please select a music file</p>}
+                {errors.music && <p className="validation-error centered">Please select a music file</p>}
 
                 <div className="flex flex-col gap-4">
                   {/* Cover Image + Title Row */}
@@ -411,14 +411,14 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId, initialTarge
                         className={`w-full p-3 bg-black/5 rounded-lg border transition outline-none modal-input text-sm
                         ${errors.name ? 'border-red-500 bg-red-50' : 'border-transparent focus:border-blue-500'}`}
                       />
-                      {errors.name && <p className="text-[10px] text-red-500 font-bold mt-1">Song title cannot be empty</p>}
+                      {errors.name && <p className="validation-error">Song title cannot be empty</p>}
                     </div>
                   </div>
 
                   <div className="input-group mt-2">
                     <div className="selection-container">
                       <label className={`selection-label ${errors.genre ? 'text-red-500' : ''}`}>
-                        Genre {errors.genre && <span className="text-[10px] font-bold"> - Please select</span>}
+                        Genre {errors.genre && <span className="validation-error" style={{ display: 'inline', marginLeft: '4px' }}> - Please select</span>}
                       </label>
                       <div className="selection-wrapper">
                         <div className="selection-row">

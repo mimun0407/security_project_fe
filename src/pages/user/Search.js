@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search as SearchIcon, X, Clock, User, Music, Disc, ChevronRight, MoreHorizontal, ListMusic, Loader2 } from 'lucide-react';
+import { Search as SearchIcon, X, Clock, User, Music, Disc, ChevronRight, MoreHorizontal, ListMusic } from 'lucide-react';
 import Sidebar from '../../components/layout/Sidebar';
 import AddToPlaylistModal from '../../components/modals/AddToPlaylistModal';
 import SectionLoader from '../../components/common/SectionLoader';
@@ -166,7 +166,7 @@ const Search = () => {
                 <div className="search-wrapper">
                     <header className="search-header">
                         <div className="search-bar-container">
-                            <SearchIcon className={`search-icon w-5 h-5 ${loading ? 'animate-pulse text-indigo-500' : ''}`} />
+                            <SearchIcon className={`search-icon ${loading ? 'animate-pulse text-indigo-500' : 'text-indigo-400'}`} strokeWidth={2.5} size={22} />
                             <input
                                 type="text"
                                 className="search-input"
@@ -183,7 +183,7 @@ const Search = () => {
                         </div>
 
                         {loading && (
-                            <SectionLoader message="Searching..." />
+                            <SectionLoader message="Searching the universe..." />
                         )}
 
                         <div className="search-tabs">
@@ -229,12 +229,7 @@ const Search = () => {
                             </div>
                         ) : (
                             <div className="animate-slide-up">
-                                {loading && results.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-20 opacity-40">
-                                        <Loader2 className="w-10 h-10 animate-spin mb-4 text-indigo-500" />
-                                        <p className="text-sm font-bold uppercase tracking-widest">Searching the universe...</p>
-                                    </div>
-                                ) : results.length > 0 ? (
+                                {results.length > 0 ? (
                                     <div className="results-grid">
                                         {results.map(item => (
                                             <div
@@ -296,7 +291,7 @@ const Search = () => {
                                             </div>
                                         ))}
                                     </div>
-                                ) : (
+                                ) : !loading && (
                                     <div className="search-empty">
                                         <div className="empty-icon-wrapper">
                                             <SearchIcon className="w-8 h-8 text-indigo-500" />

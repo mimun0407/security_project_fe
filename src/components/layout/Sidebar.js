@@ -11,6 +11,7 @@ import { useNotification } from '../../context/NotificationContext';
 import '../layout/css/Sidebar.css';
 import { getUserAvatar } from '../../utils/userUtils';
 import NotificationPanel from './NotificationPanel';
+import ConfirmModal from '../common/ConfirmModal';
 
 const Sidebar = () => {
     const navigate = useNavigate();
@@ -19,8 +20,9 @@ const Sidebar = () => {
     const { theme, toggleTheme } = useTheme();
     const { openCreatePostModal } = useModal();
     const { unreadCount } = useNotification();
-    const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const menuRef = useRef(null);
     const buttonRef = useRef(null);
     const toggleNotifications = (e) => {
@@ -280,7 +282,7 @@ const Sidebar = () => {
 
                     <div 
                         className="ig-menu-item text-red-500 font-bold cursor-pointer hover:bg-red-500/10 transition-colors" 
-                        onClick={handleLogout}
+                        onClick={() => setShowLogoutConfirm(true)}
                     >
                         <div className="text-red-500">
                              <Menu className="w-5 h-5" />
@@ -293,6 +295,16 @@ const Sidebar = () => {
             <NotificationPanel
                 isOpen={isNotificationsOpen}
                 onClose={() => setIsNotificationsOpen(false)}
+            />
+
+            <ConfirmModal 
+                isOpen={showLogoutConfirm}
+                onClose={() => setShowLogoutConfirm(false)}
+                onConfirm={handleLogout}
+                title="Logout Confirmation"
+                message="Are you sure you want to log out? We'll miss you! 🎵"
+                confirmText="Logout"
+                type="danger"
             />
         </>
     );

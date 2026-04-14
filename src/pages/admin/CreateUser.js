@@ -17,11 +17,14 @@ function CreateUser() {
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+   const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    if (formErrors[name]) setFormErrors({ ...formErrors, [name]: null });
   };
 
   const handleFileChange = (e) => {
@@ -42,8 +45,20 @@ function CreateUser() {
     setForm({ ...form, roles: newRoles });
   };
 
-  const handleSubmit = async (e) => {
+   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Simple validation
+    let errors = {};
+    if (!form.name.trim()) errors.name = "Full name is required";
+    if (!form.email.trim()) errors.email = "Email is required";
+    if (!form.password.trim()) errors.password = "Password is required";
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const formData = new FormData();
@@ -117,16 +132,16 @@ function CreateUser() {
                   <label className="form-label">Full Name</label>
                   <div className="input-icon-wrapper mb-3">
                     <i className="bi bi-person input-icon"></i>
-                    <input
+                     <input
                       type="text"
                       name="name"
-                      className="form-control-modern with-icon"
+                      className={`form-control-modern with-icon ${formErrors.name ? 'is-invalid border-red-500 bg-red-50' : ''}`}
                       placeholder="e.g. John Doe"
                       value={form.name}
                       onChange={handleChange}
-                      required
                     />
                   </div>
+                  {formErrors.name && <p className="validation-error">{formErrors.name}</p>}
                 </div>
               </div>
             </div>
@@ -141,31 +156,31 @@ function CreateUser() {
                     <label className="form-label">Email Address</label>
                     <div className="input-icon-wrapper">
                       <i className="bi bi-envelope input-icon"></i>
-                      <input
+                       <input
                         type="email"
                         name="email"
-                        className="form-control-modern with-icon"
+                        className={`form-control-modern with-icon ${formErrors.email ? 'is-invalid border-red-500 bg-red-50' : ''}`}
                         placeholder="john@example.com"
                         value={form.email}
                         onChange={handleChange}
-                        required
                       />
                     </div>
+                    {formErrors.email && <p className="validation-error">{formErrors.email}</p>}
                   </div>
                   <div className="col-md-12 mb-3">
                     <label className="form-label">Password</label>
                     <div className="input-icon-wrapper">
                       <i className="bi bi-lock input-icon"></i>
-                      <input
+                       <input
                         type="password"
                         name="password"
-                        className="form-control-modern with-icon"
+                        className={`form-control-modern with-icon ${formErrors.password ? 'is-invalid border-red-500 bg-red-50' : ''}`}
                         placeholder="Set a strong password"
                         value={form.password}
                         onChange={handleChange}
-                        required
                       />
                     </div>
+                    {formErrors.password && <p className="validation-error">{formErrors.password}</p>}
                   </div>
 
                   <div className="col-md-12 mb-4">

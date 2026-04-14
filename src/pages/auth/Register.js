@@ -31,6 +31,7 @@ function Register() {
         password: "",
         rePassword: "",
     });
+    const [fieldErrors, setFieldErrors] = useState({});
 
     // Validation Regex
     const validateEmail = (email) => {
@@ -65,7 +66,7 @@ function Register() {
         e.preventDefault();
 
         if (!validateEmail(email)) {
-            setErrorMessage("Please enter a valid email address (e.g., user@example.com)");
+            setFieldErrors({ email: "Please enter a valid email address (e.g., user@example.com)" });
             return;
         }
 
@@ -104,10 +105,11 @@ function Register() {
 
         try {
             const response = await userService.verifyOtpRegister(email, otp);
-            if (response && response.success) {
+             if (response && response.success) {
                 setStep(3);
+                setFieldErrors({});
             } else {
-                setErrorMessage(getErrorMessage({ response }, response.message || "Invalid OTP."));
+                setErrorMessage(response.message || "Invalid OTP.");
             }
         } catch (err) {
             console.error(err);
@@ -120,18 +122,21 @@ function Register() {
     const handleRegisterSubmit = async (e) => {
         e.preventDefault();
 
+         let errors = {};
         if (form.name.trim().length < 2) {
-            setErrorMessage("Full name must be at least 2 characters.");
-            return;
+            errors.name = "Full name must be at least 2 characters.";
         }
 
         if (!validatePassword(form.password)) {
-            setErrorMessage("Password must be at least 8 characters long, including uppercase, lowercase, and numbers.");
-            return;
+            errors.password = "Password must be at least 8 characters long, including uppercase, lowercase, and numbers.";
         }
 
         if (form.password !== form.rePassword) {
-            setErrorMessage("Confirmation password does not match!");
+            errors.rePassword = "Confirmation password does not match!";
+        }
+
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
             return;
         }
 
@@ -227,8 +232,10 @@ function Register() {
         }
     };
 
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+     const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm({ ...form, [name]: value });
+        if (fieldErrors[name]) setFieldErrors({ ...fieldErrors, [name]: null });
     };
 
     return (
@@ -268,15 +275,18 @@ function Register() {
                         {/* Step 1: Email Input */}
                         {step === 1 && (
                             <form onSubmit={handleEmailSubmit} className="login-form">
-                                <div className="form-group">
+                                 <div className="form-group">
                                     <input
                                         type="email"
-                                        className="form-input"
+                                        className={`form-input ${fieldErrors.email ? 'border-red-500 bg-red-50' : ''}`}
                                         placeholder="Email Address"
                                         value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
+                                        onChange={(e) => {
+                                            setEmail(e.target.value);
+                                            if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: null });
+                                        }}
                                     />
+                                    {fieldErrors.email && <p className="validation-error">{fieldErrors.email}</p>}
                                 </div>
                                 <button type="submit" className="login-button" disabled={isLoading}>
                                     {isLoading ? 'Sending OTP...' : 'Next'}
@@ -333,42 +343,41 @@ function Register() {
                         {/* Step 3: User Details */}
                         {step === 3 && (
                             <form onSubmit={handleRegisterSubmit} className="login-form">
-                                <div className="form-group">
+                                 <div className="form-group">
                                     <input
                                         type="text"
                                         name="name"
-                                        className="form-input"
+                                        className={`form-input ${fieldErrors.name ? 'border-red-500 bg-red-50' : ''}`}
                                         placeholder="Full Name"
                                         value={form.name}
                                         onChange={handleChange}
-                                        required
                                     />
+                                    {fieldErrors.name && <p className="validation-error">{fieldErrors.name}</p>}
                                 </div>
 
 
 
-                                <div className="form-group">
+                                 <div className="form-group">
                                     <input
                                         type="password"
                                         name="password"
-                                        className="form-input"
+                                        className={`form-input ${fieldErrors.password ? 'border-red-500 bg-red-50' : ''}`}
                                         placeholder="Password"
                                         value={form.password}
                                         onChange={handleChange}
-                                        required
                                     />
+                                    {fieldErrors.password && <p className="validation-error">{fieldErrors.password}</p>}
                                 </div>
-
                                 <div className="form-group">
                                     <input
                                         type="password"
                                         name="rePassword"
-                                        className="form-input"
+                                        className={`form-input ${fieldErrors.rePassword ? 'border-red-500 bg-red-50' : ''}`}
                                         placeholder="Confirm Password"
                                         value={form.rePassword}
                                         onChange={handleChange}
-                                        required
                                     />
+                                    {fieldErrors.rePassword && <p className="validation-error">{fieldErrors.rePassword}</p>}
                                 </div>
 
                                 <button type="submit" className="login-button" disabled={isLoading}>

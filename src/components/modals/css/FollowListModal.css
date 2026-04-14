@@ -72,9 +72,9 @@
 }
 
 .search-icon {
-    width: 16px;
-    height: 16px;
-    color: #94a3b8;
+    color: #818cf8; /* indigo-400 */
+    flex-shrink: 0;
+    transition: all 0.3s ease;
 }
 
 .search-input-wrapper input {
