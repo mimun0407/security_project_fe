@@ -9,6 +9,7 @@ import songService from "../../services/songService";
 import AddToPlaylistModal from "../../components/modals/AddToPlaylistModal";
 import PostDetailModal from '../../components/modals/PostDetailModal';
 import SharePostModal from '../../components/modals/SharePostModal';
+import FollowListModal from '../../components/modals/FollowListModal';
 import "./css/Profile.css";
 import { getUserAvatar } from "../../utils/userUtils";
 import { useAuth } from "../../context/AuthContext";
@@ -65,6 +66,13 @@ function Profile() {
   });
 
   const [activeMenuId, setActiveMenuId] = useState(null);
+
+  // Follow Modal State
+  const [followModal, setFollowModal] = useState({
+    isOpen: false,
+    type: 'followers',
+    title: 'Followers'
+  });
 
 
 
@@ -481,12 +489,18 @@ function Profile() {
               <span className="ig-stat-label">Albums</span>
             </div>
             <div className="h-10 w-[1px] bg-slate-200 dark:bg-slate-800 self-center"></div>
-            <div className="ig-stat-item">
+            <div 
+              className="ig-stat-item cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => setFollowModal({ isOpen: true, type: 'followers', title: 'Followers' })}
+            >
               <span className="ig-stat-count">{stats.followerCount}</span>
               <span className="ig-stat-label">Followers</span>
             </div>
             <div className="h-10 w-[1px] bg-slate-200 dark:bg-slate-800 self-center"></div>
-            <div className="ig-stat-item">
+            <div 
+              className="ig-stat-item cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => setFollowModal({ isOpen: true, type: 'following', title: 'Following' })}
+            >
               <span className="ig-stat-count">{stats.followingCount}</span>
               <span className="ig-stat-label">Following</span>
             </div>
@@ -743,6 +757,14 @@ function Profile() {
         onUpdate={(postId, updates) => {
           setUserPosts(prev => prev.map(p => p.id === postId ? { ...p, ...updates } : p));
         }}
+      />
+
+      <FollowListModal
+        isOpen={followModal.isOpen}
+        onClose={() => setFollowModal({ ...followModal, isOpen: false })}
+        userId={user.userId || user.idUser || user.id || targetId}
+        type={followModal.type}
+        title={followModal.title}
       />
     </div>
   );

@@ -237,6 +237,46 @@ const userService = {
             throw error;
         }
     },
+    
+    /**
+     * Get list of followers for a specific user
+     * @param {string} userId 
+     * @param {string} query 
+     * @param {number} page 
+     * @param {number} size 
+     * @returns {Promise<Object>} Response data
+     */
+    getFollowers: async (userId, query = '', page = 0, size = 15) => {
+        try {
+            const response = await axiosClient.get(`/follow-user/${userId}/followers`, {
+                params: { query, page, size, sort: 'createdAt,desc' }
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching followers:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Get list of following users for a specific user
+     * @param {string} userId 
+     * @param {string} query 
+     * @param {number} page 
+     * @param {number} size 
+     * @returns {Promise<Object>} Response data
+     */
+    getFollowing: async (userId, query = '', page = 0, size = 15) => {
+        try {
+            const response = await axiosClient.get(`/follow-user/${userId}/following`, {
+                params: { query, page, size, sort: 'createdAt,desc' }
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching following:", error);
+            throw error;
+        }
+    },
 };
 
 export default userService;
