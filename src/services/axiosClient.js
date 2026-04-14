@@ -45,8 +45,21 @@ axiosClient.interceptors.response.use(
         return axiosClient(originalRequest);
       } catch (err) {
         localStorage.clear();
+        const errorCode = err.response?.data?.code || err.response?.data?.errorCode;
+        const redirectUrl = errorCode ? `/login?error=${errorCode}` : "/login";
         if (window.location.pathname !== '/login') {
-          window.location.href = "/login";
+          window.location.href = redirectUrl;
+        }
+      }
+    }
+
+    // Handle 409 (Conflict) - typically used for USER_BLOCK (banned)
+    if (error.response && error.response.status === 409) {
+      const errorCode = error.response.data?.code || error.response.data?.errorCode;
+      if (errorCode === 'USER_BLOCK') {
+        localStorage.clear();
+        if (window.location.pathname !== '/login') {
+          window.location.href = `/login?error=${errorCode}`;
         }
       }
     }

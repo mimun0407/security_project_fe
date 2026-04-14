@@ -43,13 +43,30 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId, initialTarge
   useEffect(() => {
     if (isOpen) {
       const savedDrafts = localStorage.getItem(DRAFTS_KEY);
+      let parsedDrafts = [];
       if (savedDrafts) {
-        setDrafts(JSON.parse(savedDrafts));
+        parsedDrafts = JSON.parse(savedDrafts);
+        setDrafts(parsedDrafts);
       }
-      setStep(1);
+      
       fetchGenres();
+
+      // AUTO-RESUME LATEST DRAFT:
+      // If we're not given a specific external target (like an album to share),
+      // and we have unposted drafts, jump straight to the latest one.
+      if (!initialTargetType && parsedDrafts.length > 0) {
+        const latestDraft = parsedDrafts[0];
+        setUploadedSong(latestDraft);
+        setSongName(latestDraft.name);
+        const gId = latestDraft.genreId || latestDraft.idGenre || (latestDraft.genre && latestDraft.genre.id);
+        if (gId) setGenreId(gId);
+        setStep(2);
+        toast.success("Resumed your previous draft 🎵", { duration: 2000 });
+      } else {
+        setStep(1);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialTargetType]);
 
   // Handle initial props
   useEffect(() => {
@@ -265,6 +282,21 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId, initialTarge
     onClose();
   };
 
+  const handleDiscardDraft = () => {
+    if (uploadedSong) {
+      const draftId = uploadedSong.id || uploadedSong.idSong;
+      const updatedDrafts = drafts.filter(d => (d.id || d.idSong) !== draftId);
+      setDrafts(updatedDrafts);
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify(updatedDrafts));
+      toast.success("Draft discarded. Starting fresh.");
+      
+      // Reset back to Step 1
+      setUploadedSong(null);
+      setSongName('');
+      setStep(1);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay p-4 animate-in fade-in duration-200">
       <div className="rounded-xl w-full max-w-lg flex flex-col max-h-[85vh] modal-content relative">
@@ -280,6 +312,14 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, groupId, initialTarge
             <h2 className="text-base font-bold">
               {step === 1 ? 'Upload Music' : 'Post Details'}
             </h2>
+            {step === 2 && uploadedSong && (
+                <button 
+                  onClick={handleDiscardDraft}
+                  className="text-[10px] font-bold text-red-500 hover:bg-red-50 px-2 py-1 rounded-full border border-red-100 transition ml-2"
+                >
+                  Discard Draft
+                </button>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {step === 1 && drafts.length > 0 && (

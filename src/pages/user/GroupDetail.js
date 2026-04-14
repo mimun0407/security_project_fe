@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/layout/Sidebar';
 import {
     Users, Info, Shield, MessageSquare, Globe, Calendar, Lock,
-    Check, X, UserPlus, ShieldCheck
+    Check, X, UserPlus, ShieldCheck, Play, Pause, Music, Disc
 } from 'lucide-react';
 import SharePostModal from '../../components/modals/SharePostModal';
 import PostDetailModal from '../../components/modals/PostDetailModal';
@@ -555,6 +555,49 @@ const GroupDetail = () => {
                                                     ) : null}
                                                     {post.content || post.contentShare || "No content"}
                                                 </div>
+
+                                                {(post.idSong || post.idAlbum) && (
+                                                    <div className="mt-4 p-3 bg-white/5 rounded-xl border border-white/5 flex items-center gap-4 hover:bg-white/10 transition-colors group">
+                                                        <div className="relative w-16 h-16 flex-shrink-0">
+                                                            <img
+                                                                src={post.imageUrlSong || post.imageUrlAlbum || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop"}
+                                                                alt={post.nameSong || post.nameAlbum}
+                                                                className="w-full h-full object-cover rounded-lg shadow-lg"
+                                                                onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop' }}
+                                                            />
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handlePlayMusic(post); }}
+                                                                className={`absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg transition-opacity ${currentTrack?.id === (post.idSong || post.idAlbum) && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                                                            >
+                                                                {currentTrack?.id === (post.idSong || post.idAlbum) && isPlaying ? (
+                                                                    <Pause className="w-8 h-8 text-white fill-white" />
+                                                                ) : (
+                                                                    <Play className="w-8 h-8 text-white fill-white ml-1" />
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="font-bold text-white truncate">{post.nameSong || post.nameAlbum || "Unknown Track"}</div>
+                                                            <div className="text-xs text-slate-400 mt-1 flex items-center gap-2">
+                                                                {post.idAlbum ? <Disc className="w-3 h-3" /> : <Music className="w-3 h-3" />}
+                                                                {post.idAlbum ? 'Album' : 'Song'}
+                                                                {post.playCount !== undefined && (
+                                                                    <>
+                                                                        <span className="opacity-30">•</span>
+                                                                        <span>{post.playCount.toLocaleString()} plays</span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        {currentTrack?.id === (post.idSong || post.idAlbum) && isPlaying && (
+                                                            <div className="flex items-end gap-0.5 h-4 mb-1">
+                                                                <div className="w-1 bg-indigo-500 rounded-full animate-music-bar-1"></div>
+                                                                <div className="w-1 bg-indigo-500 rounded-full animate-music-bar-2"></div>
+                                                                <div className="w-1 bg-indigo-500 rounded-full animate-music-bar-3"></div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>

@@ -126,7 +126,7 @@ function Profile() {
             followingCount: statsContent.followingCount || 0
           });
 
-           if (!isOwn) {
+          if (!isOwn) {
             const hasFollowStatus = statsContent.hasOwnProperty('following') || statsContent.hasOwnProperty('isFollowing') || statsContent.hasOwnProperty('isFollowed');
             if (hasFollowStatus) {
               setIsFollowing(statsContent.following || statsContent.isFollowing || statsContent.isFollowed || false);
@@ -372,19 +372,19 @@ function Profile() {
     }
   };
 
-   const handleFollowToggle = async () => {
+  const handleFollowToggle = async () => {
     if (!user) return;
     const resolvedId = user.userId || user.idUser || user.id || targetId;
     if (!resolvedId) return;
 
     const originalFollowState = isFollowing;
-    
+
     // Optimistic Update
     setIsFollowing(!originalFollowState);
     setStats(prev => ({
       ...prev,
-      followerCount: originalFollowState 
-        ? Math.max(0, prev.followerCount - 1) 
+      followerCount: originalFollowState
+        ? Math.max(0, prev.followerCount - 1)
         : prev.followerCount + 1
     }));
 
@@ -400,8 +400,8 @@ function Profile() {
       setIsFollowing(originalFollowState);
       setStats(prev => ({
         ...prev,
-        followerCount: originalFollowState 
-          ? prev.followerCount 
+        followerCount: originalFollowState
+          ? prev.followerCount
           : Math.max(0, prev.followerCount - 1)
       }));
       toast.error("Failed to update follow status");
@@ -516,7 +516,7 @@ function Profile() {
               <span className="ig-stat-label">Albums</span>
             </div>
             <div className="h-10 w-[1px] bg-slate-200 dark:bg-slate-800 self-center"></div>
-            <div 
+            <div
               className="ig-stat-item cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setFollowModal({ isOpen: true, type: 'followers', title: 'Followers' })}
             >
@@ -524,7 +524,7 @@ function Profile() {
               <span className="ig-stat-label">Followers</span>
             </div>
             <div className="h-10 w-[1px] bg-slate-200 dark:bg-slate-800 self-center"></div>
-            <div 
+            <div
               className="ig-stat-item cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setFollowModal({ isOpen: true, type: 'following', title: 'Following' })}
             >
@@ -561,9 +561,9 @@ function Profile() {
                       <div
                         key={post.id}
                         className="post-card bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all group overflow-hidden cursor-pointer flex flex-col"
-                        onClick={() => { 
-                          setSelectedPostIdDetail(post.id); 
-                          setIsDetailModalOpen(true); 
+                        onClick={() => {
+                          setSelectedPostIdDetail(post.id);
+                          setIsDetailModalOpen(true);
                         }}
                       >
                         <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-4 bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
@@ -574,7 +574,7 @@ function Profile() {
                           />
                           {(post.musicLink || post.idSong) && (
                             <div className="post-play-overlay">
-                              <button 
+                              <button
                                 className={`post-play-btn ${currentTrack?.id === (post.idSong || post.id) && isPlaying ? 'active' : ''}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -715,24 +715,24 @@ function Profile() {
                 <SectionLoader message="Loading songs..." />
               ) : userSongs.length > 0 ? (
                 <div className="flex flex-col gap-3">
-                      {userSongs.filter(song => isOwnProfile || song.visibility !== 'PRIVATE').map((song, index) => (
-                        <div
-                          key={song.id || index}
-                          className="profile-song-row group"
-                          onClick={() => handlePlaySong(song, index)}
-                        >
-                          <div className="song-row-left">
-                            <img
-                              src={song.imageUrl ? (song.imageUrl.startsWith('http') ? song.imageUrl : `${process.env.REACT_APP_API_BASE_URL}${song.imageUrl}`) : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop"}
-                              alt={song.name || song.songName}
-                              className="song-row-img"
-                              onError={(e) => e.target.src = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop"}
-                            />
-                            <div className="song-row-info">
-                              <div className="song-row-name">{song.name || song.songName}</div>
-                              <div className="song-row-artist">{song.artistName || user.name}</div>
-                            </div>
-                          </div>
+                  {userSongs.filter(song => isOwnProfile || song.visibility !== 'PRIVATE').map((song, index) => (
+                    <div
+                      key={song.id || index}
+                      className="profile-song-row group"
+                      onClick={() => handlePlaySong(song, index)}
+                    >
+                      <div className="song-row-left">
+                        <img
+                          src={song.imageUrl ? (song.imageUrl.startsWith('http') ? song.imageUrl : `${process.env.REACT_APP_API_BASE_URL}${song.imageUrl}`) : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop"}
+                          alt={song.name || song.songName}
+                          className="song-row-img"
+                          onError={(e) => e.target.src = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop"}
+                        />
+                        <div className="song-row-info">
+                          <div className="song-row-name">{song.name || song.songName}</div>
+                          <div className="song-row-artist">{song.artistName || user.name}</div>
+                        </div>
+                      </div>
                       <div className="song-row-right">
                         <div className="song-row-stat">
                           <Headphones className="w-4 h-4 opacity-50" />

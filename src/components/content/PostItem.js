@@ -65,7 +65,7 @@ const PostItem = ({
                                     <span className="username font-bold text-white hover:text-indigo-400 transition-colors">
                                         {post.groupName || 'Group'}
                                     </span>
-                                     <span className="text-[11px] text-slate-400 font-medium hover:text-white transition-colors"
+                                    <span className="text-[11px] text-slate-400 font-medium hover:text-white transition-colors"
                                         onClick={(e) => { e.stopPropagation(); onProfileClick(authorId); }}>
                                         {username}
                                     </span>
@@ -84,7 +84,7 @@ const PostItem = ({
                                 </>
                             )}
                             {post.postType === 'SHARE' && (
-                                <div 
+                                <div
                                     className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-1 hover:text-indigo-400 transition-colors"
                                     onClick={(e) => { e.stopPropagation(); onPostClick(post.idPostShare || post.id); }}
                                 >

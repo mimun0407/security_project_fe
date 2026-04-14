@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import userService from "../../services/userService";
 import { getUserIdFromToken } from "../../utils/jwtUtils";
@@ -15,7 +15,19 @@ function Login() {
   const [fieldErrors, setFieldErrors] = useState({});
 
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const error = params.get("error");
+    if (error) {
+      const message = getErrorMessage(error);
+      toast.error(message);
+      // Clean up URL to avoid repeated toasts on refresh
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
 
   const handleGoogleLogin = () => {
     window.location.href = `${process.env.REACT_APP_API_BASE_URL}/oauth2/authorization/google`;
