@@ -435,7 +435,7 @@ const PostDetailModal = ({ isOpen, onClose, postId, onUpdate, currentUser, isGro
                                                                             <ListMusic className="w-4 h-4" />
                                                                             Add to Playlist
                                                                         </button>
-                                                                        {(song.userId === currentUser?.id || isGroupAdmin) && (
+                                                                        {(song.userId === currentUser?.id) && (
                                                                             <button
                                                                                 className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-rose-400 hover:text-white hover:bg-rose-500/20 transition-all uppercase tracking-wider"
                                                                                 onClick={(e) => {
@@ -533,7 +533,7 @@ const PostDetailModal = ({ isOpen, onClose, postId, onUpdate, currentUser, isGro
                                                             <ListMusic className="w-4 h-4" />
                                                             Add to Playlist
                                                         </button>
-                                                        {((post.idUser === (post.userId || post.idUser)) || isGroupAdmin) && post.targetType === 'SONG' && (
+                                                        {(post.authorId === currentUser?.id) && post.targetType === 'SONG' && (
                                                             <button
                                                                 className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-rose-400 hover:text-white hover:bg-rose-500/20 transition-all uppercase tracking-wider text-left"
                                                                 onClick={(e) => {
